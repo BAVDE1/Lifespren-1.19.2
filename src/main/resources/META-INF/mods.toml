@@ -29,7 +29,7 @@ displayName="Lifespren Mod" #mandatory
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="examplemod.png" #optional
 # A text field displayed in the mod UI
-credits="All by me so far (im all alone)" #optional
+credits="All by me so far (im so alone)" #optional
 # A text field displayed in the mod UI
 authors="BAVDE1" #optional
 # Display Test controls the display for your mod in the server connection screen
