@@ -1,7 +1,10 @@
 package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.entity.ModEntityTypes;
+import com.bavde1.lifespren.entity.client.LifesprenRenderer;
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -43,6 +46,8 @@ public class LifesprenMod {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
 
+            //render entities
+            EntityRenderers.register(ModEntityTypes.LIFESPREN_MOB.get(), LifesprenRenderer::new);
         }
     }
 }
