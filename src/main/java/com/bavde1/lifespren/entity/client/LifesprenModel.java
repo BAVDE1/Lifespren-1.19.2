@@ -2,9 +2,6 @@ package com.bavde1.lifespren.entity.client;
 
 import com.bavde1.lifespren.LifesprenMod;
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
-import net.minecraft.client.model.HierarchicalModel;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib3.model.AnimatedGeoModel;
 

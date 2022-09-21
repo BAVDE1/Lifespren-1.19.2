@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ModEvents {
     @Mod.EventBusSubscriber(modid = LifesprenMod.MOD_ID)
     public static class ForgeEvents {
-        //normal world events (idk if needed rn)
+        //normal world events
     }
 
     @Mod.EventBusSubscriber(modid = LifesprenMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)

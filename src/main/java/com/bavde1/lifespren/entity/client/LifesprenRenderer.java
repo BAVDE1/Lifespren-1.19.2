@@ -26,7 +26,8 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     public RenderType getRenderType(LifesprenEntity entity, float partialTicks, PoseStack stack,
                                     @Nullable MultiBufferSource renderTypeBuffer,
                                     @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
-        //cool stuff can go in here (might not use)
+        //cool stuff can go in here
+        stack.scale(0.5F, 0.5F, 0.5F);
         return super.getRenderType(entity, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
     }
 }
