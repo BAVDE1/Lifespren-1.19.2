@@ -1,5 +1,6 @@
 package com.bavde1.lifespren.entity.lifesprenEntities;
 
+import com.bavde1.lifespren.sound.ModSounds;
 import com.bavde1.lifespren.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib3.core.IAnimatable;
 import software.bernie.geckolib3.core.PlayState;
@@ -28,14 +30,13 @@ import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
 import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
 //todo:
 // particles? trail?
-// slower movement
-// make custom ambient sound
-// fly near or around crops perhaps? might need goals
 // despawn after 20 seconds or so (explode into particles? or shrink)
 
 public class LifesprenEntity extends AmbientCreature implements IAnimatable, FlyingAnimal {
@@ -57,43 +58,44 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
     }
 
     public void tick() {
-        //makes entity fly vertically
-        this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.6D, 1.0D));
+        //entity fly vertically
+        this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
         super.tick();
     }
 
-    //ai
+    //basic AI
     protected void customServerAiStep() {
         BlockPos blockpos = this.blockPosition();
         int X = this.getBlockX();
         int Y = this.getBlockY();
         int Z = this.getBlockZ();
 
-        if (this.targetPosition != null && (!this.level.isEmptyBlock(this.targetPosition) || this.targetPosition.getY() <= this.level.getMinBuildHeight())) {
+        //heal every 10 ticks
+        if (!this.level.isClientSide && this.isAlive() && this.tickCount % 10 == 0) {
+            this.heal(1.0F);
+        }
+
+        if (this.targetPosition != null && (!this.level.isEmptyBlock(this.targetPosition) || this.targetPosition.getY() <= this.level.getMinBuildHeight()) && Math.random() < 0.6) {
             //reset target pos
             this.targetPosition = null;
         }
 
         if (this.targetPosition == null || this.random.nextInt(30) == 0 || this.targetPosition.closerToCenterThan(this.position(), 2.0D)) {
+            //finds nearby blocks lifespren is attracted to
             int searchRange = 10;
-            /*PoiManager poi = ((ServerLevel) LifesprenEntity.this.level).getPoiManager();
-            Stream<PoiRecord> stream = poi.getInRange((typeHolder) -> {
-                return typeHolder.is(ModTags.Blocks.LIFESPREN_ATTRACTING.location());
-            }, blockpos, searchRange, PoiManager.Occupancy.ANY);
+            ArrayList<BlockPos> validBlockPos = new ArrayList<>();
+            for (BlockPos pos : BlockPos.betweenClosed(X - searchRange, Y - searchRange, Z - searchRange, X + searchRange, Y + searchRange, Z + searchRange)) {
+                Block block = level.getBlockState(pos.immutable()).getBlock();
+                if (isLifesprenAttracting(block)) {
+                    validBlockPos.add(pos.immutable());
+                }
+            }
 
-            List<BlockPos> list = stream.map(PoiRecord::getPos).toList();*/
-
-            //gets blockpos withing range
-            Stream<BlockPos> stream = BlockPos.betweenClosedStream(X - searchRange, Y - searchRange, Z - searchRange, X + searchRange, Y + searchRange, Z + searchRange);
-
-            //filters blockpos to tag
-            List<BlockPos> list = stream.filter(LifesprenEntity.this::lifesprenAttracting).toList();
-
-            if (!list.isEmpty()) { //20%?
-                int rand = (int) randomBetweenInt(list.size());
-                this.targetPosition = list.get(rand);
-                System.out.println(rand);
-                System.out.println(list.get(rand));
+            //setting target pos
+            if (!validBlockPos.isEmpty() && Math.random() < 0.85) { //85%
+                BlockPos targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
+                targetPos.offset(Math.random(), 0.3 + (Math.random() * 4), Math.random());
+                this.targetPosition = targetPos;
             } else {
                 //gets random blockpos withing 7 blocks (bat AI)
                 int range = 7;
@@ -105,15 +107,15 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
             }
         }
 
-        double d2 = (double) this.targetPosition.getX() + 0.5D - this.getX();
-        double d0 = (double) this.targetPosition.getY() + 0.1D - this.getY();
-        double d1 = (double) this.targetPosition.getZ() + 0.5D - this.getZ();
+        double dX = (double) this.targetPosition.getX() + 0.5D - this.getX();
+        double dY = (double) this.targetPosition.getY() + 0.1D - this.getY();
+        double dZ = (double) this.targetPosition.getZ() + 0.5D - this.getZ();
 
         Vec3 vec3 = this.getDeltaMovement();
-        int div = 2;
-        double pX = ((Math.signum(d2) * 0.5D - vec3.x) * (double) 0.1F) / div;
-        double pY = (Math.signum(d0) * (double) 0.7F - vec3.y) * (double) 0.1F;
-        double pZ = ((Math.signum(d1) * 0.5D - vec3.z) * (double) 0.1F) / div;
+        double div = 2.8;
+        double pX = ((Math.signum(dX) * 0.5D - vec3.x) * (double) 0.1F) / div;
+        double pY = (Math.signum(dY) * (double) 0.7F - vec3.y) * (double) 0.1F;
+        double pZ = ((Math.signum(dZ) * 0.5D - vec3.z) * (double) 0.1F) / div;
         Vec3 vec31 = vec3.add(pX, pY, pZ);
         this.setDeltaMovement(vec31);
 
@@ -122,15 +124,29 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
         this.zza = 0.5F;
         this.setYRot(this.getYRot() + f1);
         super.customServerAiStep();
+
+        //despawn rules
+        if (this.tickCount > 300 && Math.random() < ((this.tickCount - 300F) / 5000F)) {
+            despawnLifespren();
+        }
     }
 
-    private boolean lifesprenAttracting(BlockPos blockpos) {
-        Block block = level.getBlockState(blockpos).getBlock();
+    private static boolean isLifesprenAttracting(Block block) {
         return block.defaultBlockState().is(ModTags.Blocks.LIFESPREN_ATTRACTING);
     }
 
-    private static double randomBetweenInt(int max) {
-        return Math.floor(Math.random() * max);
+    private void despawnLifespren() {
+        this.discard();
+    }
+
+    @Override
+    public void checkDespawn() {
+        super.checkDespawn();
+    }
+
+    @Override
+    protected boolean shouldDespawnInPeaceful() {
+        return false;
     }
 
     //cancels attacks
@@ -141,11 +157,16 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
     //sounds
     @Nullable
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.AMETHYST_BLOCK_CHIME;
+        //1/2
+        return this.random.nextInt(2) != 0 ? null : ModSounds.LIFESPREN_CHIMES.get();
     }
 
     protected float getSoundVolume() {
-        return 3.5F;
+        return 3F;
+    }
+
+    @Override
+    protected void playStepSound(BlockPos pPos, BlockState pState) {
     }
 
     //always flying

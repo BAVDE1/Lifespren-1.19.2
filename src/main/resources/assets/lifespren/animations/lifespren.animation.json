@@ -3,6 +3,9 @@
 	"animations": {
 		"animation.lifespren.idle": {
 			"loop": true
+		},
+		"animation.unknown.new": {
+			"loop": true
 		}
 	}
 }

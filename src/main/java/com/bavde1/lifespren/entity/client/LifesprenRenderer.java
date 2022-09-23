@@ -12,9 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
 
-//todo:
-// test light levels
-
 public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     public LifesprenRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new LifesprenModel());
@@ -28,7 +25,7 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
 
     @Override
     protected int getBlockLightLevel(LifesprenEntity pEntity, BlockPos pPos) {
-        return 15;
+        return 5;
     }
 
     @Override
@@ -36,6 +33,7 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
                                     @Nullable MultiBufferSource renderTypeBuffer,
                                     @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
         //cool stuff can go in here
+        stack.scale(0.5F, 0.5F, 0.5F);
         return super.getRenderType(entity, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
     }
 }

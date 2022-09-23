@@ -1,6 +1,29 @@
 {
   "replace": false,
   "values": [
-    "minecraft:wheat"
+    "minecraft:wheat",
+    "minecraft:carrots",
+    "minecraft:potatoes",
+    "minecraft:beetroots",
+
+    "minecraft:melon_stem",
+    "minecraft:attached_melon_stem",
+    "minecraft:pumpkin_stem",
+    "minecraft:attached_pumpkin_stem",
+    "minecraft:sugar_cane",
+
+    "minecraft:oak_sapling",
+    "minecraft:spruce_sapling",
+    "minecraft:birch_sapling",
+    "minecraft:jungle_sapling",
+    "minecraft:acacia_sapling",
+    "minecraft:dark_oak_sapling",
+    "minecraft:mangrove_propagule",
+
+    "minecraft:cave_vines_plant",
+    "minecraft:cave_vines",
+    "minecraft:vine",
+
+    "minecraft:nether_wart"
   ]
 }

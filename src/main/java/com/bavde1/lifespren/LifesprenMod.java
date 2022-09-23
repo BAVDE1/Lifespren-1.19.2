@@ -2,6 +2,7 @@ package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
+import com.bavde1.lifespren.sound.ModSounds;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -21,14 +22,16 @@ public class LifesprenMod {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public LifesprenMod() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        ModEntityTypes.register(modEventBus);
+        ModEntityTypes.register(eventBus);
+
+        ModSounds.register(eventBus);
 
         GeckoLib.initialize();
 
         // Register the commonSetup method for modloading
-        modEventBus.addListener(this::commonSetup);
+        eventBus.addListener(this::commonSetup);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
