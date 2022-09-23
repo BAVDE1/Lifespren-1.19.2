@@ -22,7 +22,7 @@ public class TrailParticles extends SimpleAnimatedParticle {
         this.rCol = 0.32f;
         this.gCol = 1f;
         this.bCol = 0.3f;
-        this.getLightColor(0.5F);
+        this.getLightColor(0.4F);
     }
 
     @Override

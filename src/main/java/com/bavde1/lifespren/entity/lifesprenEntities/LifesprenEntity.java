@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 
 //todo:
 // particles? trail?
-// despawn after 20 seconds or so (explode into particles? or shrink)
+// fix despawn effects not working sometimes
 
 public class LifesprenEntity extends AmbientCreature implements IAnimatable, FlyingAnimal {
     private final AnimationFactory factory = new AnimationFactory(this);
@@ -65,13 +65,23 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
         super.tick();
         //entity fly vertically
         this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
-        //trail
-        if (this.level.isClientSide) {
-            this.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), this.getX(-0.5), this.getY(), this.getZ(-0.5), 0, 0, 0);
-        }
-        //despawn rules
+        //despawn entity
         if (this.tickCount > 300 && Math.random() < ((this.tickCount - 300F) / 5000F)) {
-            despawnLifespren();
+            this.discard();
+            this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+            if (this.level.isClientSide) {
+                for (int i = 0; i < 10; ++i) {
+                    double sX = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
+                    double sY = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
+                    double sZ = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
+
+                    double pX = this.getX();
+                    double pY = this.getY();
+                    double pZ = this.getZ();
+
+                    this.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), false, pX, pY, pZ, sX, sY + 0.2D, sZ);
+                }
+            }
         }
     }
 
@@ -140,24 +150,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
 
     private static boolean isLifesprenAttracting(Block block) {
         return block.defaultBlockState().is(ModTags.Blocks.LIFESPREN_ATTRACTING_BLOCKS);
-    }
-
-    private void despawnLifespren() {
-        this.discard();
-        this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
-        if (this.level.isClientSide) {
-            for (int i = 0; i < 10; ++i) {
-                double sX = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
-                double sY = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
-                double sZ = (this.random.nextFloat() * 2.0F - 1.0F) / 5;
-
-                double pX = this.getX();
-                double pY = this.getY();
-                double pZ = this.getZ();
-
-                this.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), false, pX, pY, pZ, sX, sY + 0.2D, sZ);
-            }
-        }
     }
 
     @Override

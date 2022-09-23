@@ -6,6 +6,9 @@
 		},
 		"animation.unknown.new": {
 			"loop": true
+		},
+		"animation.model.new": {
+			"loop": true
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.bavde1.lifespren.entity.client;
 
 import com.bavde1.lifespren.LifesprenMod;
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
+import com.bavde1.lifespren.particle.ModParticles;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -10,6 +11,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib3.geo.render.built.GeoBone;
 import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
 
 public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
@@ -24,8 +26,16 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     }
 
     @Override
+    public void render(LifesprenEntity entity, float entityYaw, float partialTicks, PoseStack stack, MultiBufferSource bufferIn, int packedLightIn) {
+        super.render(entity, entityYaw, partialTicks, stack, bufferIn, packedLightIn);
+        if (entity.level.isClientSide) {
+            entity.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), entity.getX(), entity.getY(), entity.getZ(), 0, 0, 0);
+        }
+    }
+
+    @Override
     protected int getBlockLightLevel(LifesprenEntity pEntity, BlockPos pPos) {
-        return 5;
+        return 8;
     }
 
     @Override
