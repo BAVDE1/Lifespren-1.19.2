@@ -2,6 +2,7 @@ package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
+import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.sound.ModSounds;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -27,6 +28,8 @@ public class LifesprenMod {
         ModEntityTypes.register(eventBus);
 
         ModSounds.register(eventBus);
+
+        ModParticles.register(eventBus);
 
         GeckoLib.initialize();
 

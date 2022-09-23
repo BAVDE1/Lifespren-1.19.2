@@ -12,8 +12,8 @@ public class ModTags {
     public static class Blocks {
 
         //TAGS HERE
-        public static final TagKey<Block> LIFESPREN_ATTRACTING
-                = tag("lifespren_attracting");
+        public static final TagKey<Block> LIFESPREN_ATTRACTING_BLOCKS
+                = tag("lifespren_attracting_blocks");
 
         //tag stuff
         private static TagKey<Block> tag(String name) {
