@@ -18,6 +18,7 @@ public class ModEntityTypes {
             ENTITY_TYPES.register("lifespren_mob",
                     () -> EntityType.Builder.of(LifesprenEntity::new, MobCategory.AMBIENT)
                             .sized(0.1f, 0.1f)
+                            .clientTrackingRange(4)
                             .build(new ResourceLocation(LifesprenMod.MOD_ID, "lifespren_mob").toString()));
 
 
