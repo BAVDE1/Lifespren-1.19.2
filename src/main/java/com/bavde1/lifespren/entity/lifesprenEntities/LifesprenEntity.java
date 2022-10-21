@@ -43,10 +43,9 @@ import java.util.stream.Stream;
 // fix hit box position
 // fix despawn effects not working sometimes
 
-public class LifesprenEntity extends AmbientCreature implements IAnimatable, FlyingAnimal {
+public class LifesprenEntity extends AmbientCreature implements IAnimatable { // Flying animal?
     private final AnimationFactory factory = new AnimationFactory(this);
     private BlockPos targetPosition;
-    private Minecraft minecraft;
 
     public LifesprenEntity(EntityType<? extends AmbientCreature> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -71,7 +70,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
 
     //basic AI
     protected void customServerAiStep() {
-        BlockPos blockpos = this.blockPosition();
         int bX = this.getBlockX();
         int bY = this.getBlockY();
         int bZ = this.getBlockZ();
@@ -135,8 +133,8 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
     private void despawnLifespren() {
         this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
         if (this.level.isClientSide) {
-            for (int i = 0; i < 16; ++i) {
-                int div = 6;
+            for (int i = 0; i < 10; ++i) {
+                int div = 7;
                 double sX = (this.random.nextFloat() * 2.0F - 1.0F) / div;
                 double sY = (this.random.nextFloat() * 2.0F - 1.0F) / div;
                 double sZ = (this.random.nextFloat() * 2.0F - 1.0F) / div;
@@ -220,16 +218,28 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable, Fly
         return pSize.height / 2.0F;
     }
 
+    //how far away the entity should render
+    @Override
+    public boolean shouldRenderAtSqrDistance(double pDistance) {
+        double area = this.getBoundingBox().getSize();
+        if (Double.isNaN(area)) {
+            area = 1.0D;
+        }
+
+        //since lifespren has such a small hit box this needs to be altered
+        area *= 150.0D; //default is 64.0D
+        return pDistance < area * area;
+    }
+
     //animation stuff
     private <E extends IAnimatable> PlayState predicate(AnimationEvent<E> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("lifespren.animation", true));
+        event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.lifespren.idle", true));
         return PlayState.CONTINUE;
     }
 
     @Override
     public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController(this, "controller",
-                0, this::predicate));
+        data.addAnimationController(new AnimationController(this, "controller",0, this::predicate));
     }
 
     @Override

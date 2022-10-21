@@ -38,11 +38,11 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     public RenderType getRenderType(LifesprenEntity entity, float partialTicks, PoseStack stack,
                                     @Nullable MultiBufferSource renderTypeBuffer,
                                     @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
-        //cool stuff can go in here
+        //scale entity to half model size
         stack.scale(0.5F, 0.5F, 0.5F);
         //spawn particle trail here so is in sync with entity position
         if (entity.level.isClientSide) {
-            entity.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), entity.getX(), entity.getY(), entity.getZ(), 0, 0, 0);
+            entity.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), entity.getX() + 0.005, entity.getY() + 0.08, entity.getZ(), 0, 0, 0);
         }
         return super.getRenderType(entity, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
     }

@@ -15,7 +15,7 @@ public class TrailParticles extends SimpleAnimatedParticle {
         this.xd = xd;
         this.yd = yd;
         this.zd = zd;
-        this.quadSize *= 0.2F;
+        this.quadSize *= 0.18F;
         this.lifetime = 20;
         this.setSpriteFromAge(spriteSet);
 
