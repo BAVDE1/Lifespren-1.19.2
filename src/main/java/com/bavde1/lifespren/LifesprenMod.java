@@ -1,7 +1,9 @@
 package com.bavde1.lifespren;
 
+import com.bavde1.lifespren.block.ModBlocks;
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
+import com.bavde1.lifespren.item.ModItems;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.sound.ModSounds;
 import com.mojang.logging.LogUtils;
@@ -32,6 +34,9 @@ public class LifesprenMod {
         ModParticles.register(eventBus);
 
         GeckoLib.initialize();
+
+        ModBlocks.register(eventBus);
+        ModItems.register(eventBus);
 
         // Register the commonSetup method for modloading
         eventBus.addListener(this::commonSetup);

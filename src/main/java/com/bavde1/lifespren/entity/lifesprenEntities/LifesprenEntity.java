@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib3.core.IAnimatable;
 import software.bernie.geckolib3.core.PlayState;
 import software.bernie.geckolib3.core.builder.AnimationBuilder;
+import software.bernie.geckolib3.core.builder.ILoopType;
 import software.bernie.geckolib3.core.controller.AnimationController;
 import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
 import software.bernie.geckolib3.core.manager.AnimationData;
@@ -36,11 +37,11 @@ import software.bernie.geckolib3.core.manager.AnimationFactory;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 import java.util.stream.Stream;
 
 //todo:
 // fix animation
-// fix hit box position
 // fix despawn effects not working sometimes
 
 public class LifesprenEntity extends AmbientCreature implements IAnimatable { // Flying animal?
@@ -58,7 +59,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     }
 
     public void tick() {
-        super.tick();
         //entity fly vertically
         this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
         //despawn entity
@@ -66,6 +66,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
         if (this.tickCount > minAliveSec * 20 && Math.random() < ((this.tickCount - minAliveSec * 20) / 5000F)) {
             despawnLifespren();
         }
+        super.tick();
     }
 
     //basic AI
@@ -112,7 +113,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
         double dX = (double) this.targetPosition.getX() + 0.5D - this.getX();
         double dY = (double) this.targetPosition.getY() + 0.1D - this.getY();
         double dZ = (double) this.targetPosition.getZ() + 0.5D - this.getZ();
-
         Vec3 vec3 = this.getDeltaMovement();
         double div = 2.8;
         double pX = ((Math.signum(dX) * 0.5D - vec3.x) * (double) 0.1F) / div;
@@ -131,7 +131,9 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     }
 
     private void despawnLifespren() {
+        //sound
         this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+        //particle explosion
         if (this.level.isClientSide) {
             for (int i = 0; i < 10; ++i) {
                 int div = 7;
@@ -146,6 +148,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
                 this.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), false, pX, pY, pZ, sX, sY + 0.2D, sZ);
             }
         }
+        //despawn
         this.discard();
     }
 
@@ -156,7 +159,9 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     //despawn on damage
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
-        despawnLifespren();
+        if (pSource != DamageSource.CRAMMING) {
+            despawnLifespren();
+        }
         return false;
     }
 
@@ -178,11 +183,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
 
     @Override
     protected void playStepSound(BlockPos pPos, BlockState pState) {
-    }
-
-    //always flying
-    public boolean isFlying() {
-        return true;
     }
 
     //cancel all pushing
@@ -233,7 +233,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
 
     //animation stuff
     private <E extends IAnimatable> PlayState predicate(AnimationEvent<E> event) {
-        event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.lifespren.idle", true));
+        event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.lifespren.idle", ILoopType.EDefaultLoopTypes.LOOP));
         return PlayState.CONTINUE;
     }
 
