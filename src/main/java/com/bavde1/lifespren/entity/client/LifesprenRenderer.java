@@ -22,7 +22,7 @@ import software.bernie.geckolib3.geo.render.built.GeoModel;
 import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
 
 public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
-    ResourceLocation texture = new ResourceLocation(LifesprenMod.MOD_ID, "textures/entity/lifespren_mob_texture_new.png");
+    ResourceLocation texture = new ResourceLocation(LifesprenMod.MOD_ID, "textures/entity/lifespren_mob_texture.png");
 
     public LifesprenRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new LifesprenModel());
