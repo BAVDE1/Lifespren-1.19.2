@@ -74,7 +74,8 @@ public class TestBlock extends Block {
             this.timeStamp = System.currentTimeMillis();
             this.drawing = true;
             this.validPos = validBlockPos;
-            level.scheduleTick(pos, this, 20);
+            //level.scheduleTick(pos, this, 20);
+            drawLine(pos);
 
             System.out.println("will draw / currently: " + this.drawing);
         }
