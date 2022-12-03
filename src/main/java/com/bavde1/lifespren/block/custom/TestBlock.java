@@ -1,27 +1,37 @@
 package com.bavde1.lifespren.block.custom;
 
-import com.bavde1.lifespren.particle.ModParticles;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
 public class TestBlock extends Block {
+    private double timeStamp;
+    private boolean drawing = false;
+    private ArrayList<BlockPos> validPos;
+
     public TestBlock(Properties pProperties) {
         super(pProperties);
     }
 
     @Override
-    public boolean isRandomlyTicking(BlockState pState) {
-        return true;
+    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+        this.drawing = false;
     }
 
     /**
@@ -30,44 +40,72 @@ public class TestBlock extends Block {
      */
 
     @Override
-    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (player.getMainHandItem().getItem() == Items.ARROW) {
+            this.drawing = false;
+            System.out.println("switched to: " + this.drawing);
+            return InteractionResult.SUCCESS;
+        }
+        if (player.getMainHandItem().getItem() == Items.ACACIA_BOAT) {
+            System.out.println("currently: " + drawing);
+            return InteractionResult.SUCCESS;
+        }
+        if (!this.drawing) {
+            activate(state, level, pos);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    public void activate(BlockState state, Level level, BlockPos pos) {
         int hRange = 9; //horizontal
         int vRange = 9; //vertical
+
+        // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
         for (BlockPos blockPos : BlockPos.betweenClosed(pos.getX() - hRange, pos.getY() - vRange, pos.getZ() - hRange, pos.getX() + hRange, pos.getY() + vRange, pos.getZ() + hRange)) {
-            Block block = level.getBlockState(blockPos.immutable()).getBlock();
+            Block block = state.getBlock();
             if (Blocks.WHEAT == block) {
                 validBlockPos.add(blockPos.immutable());
             }
         }
 
+        // tick block if can
         if (!validBlockPos.isEmpty()) {
-            BlockPos targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
-            double v = 0.5;
-            // vector of block
-            Vec3 v1 = new Vec3(pos.getX() + v, pos.getY() + v, pos.getZ() + v);
-            // vector of target block
-            Vec3 v2 = new Vec3(targetPos.getX() + v, targetPos.getY() + v, targetPos.getZ() + v);
+            this.timeStamp = System.currentTimeMillis();
+            this.drawing = true;
+            this.validPos = validBlockPos;
+            level.scheduleTick(pos, this, 20);
 
-            // vector of 2 positions (v1, v2)
-            Vec3 v3 = new Vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
-
-            // loop for division of vector (v3)
-            double div = Math.pow(v3.length(), -2);
-            for (double i = div; i < 1; i += div) {
-                Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
-                spawnParticle(vLine, pos);
-            }
-
-/*
-            System.out.println("============================================================");
-            System.out.println("WHEAT: " + targetPos.getX() + targetPos.getY() + targetPos.getZ() + "     (" + UUID.randomUUID() + ")");
-            System.out.println("Vector: " + v3 + "            Vec length: " + v3.length());
-*/
-        } else {
-            System.out.println("no wheat");
+            System.out.println("will draw / currently: " + this.drawing);
         }
-        super.randomTick(state, level, pos, randomSource);
+    }
+
+    @Override
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource pRandom) {
+        drawLine(pos);
+        this.drawing = false;
+    }
+
+    private void drawLine(BlockPos pos) {
+        BlockPos targetPos = this.validPos.get((int) Math.floor(Math.random() * this.validPos.size()));
+        double v = 0.5;
+        // vector of block
+        Vec3 v1 = new Vec3(pos.getX() + v, pos.getY() + v, pos.getZ() + v);
+        // vector of target block
+        Vec3 v2 = new Vec3(targetPos.getX() + v, targetPos.getY() + v, targetPos.getZ() + v);
+
+        // vector of v1, v2
+        Vec3 v3 = new Vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+
+        // scalar of vector (v3)
+        double div = 10 / (v3.length() * 100); // 10 particles per block (i think)
+        double percent = (div) * 100;
+        for (double i = div; i < 1; i += div) {
+            Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
+            spawnParticle(vLine, pos);
+        }
+
+        System.out.println("drawn / currently: " + this.drawing);
     }
 
     public void spawnParticle(Vec3 vec3, BlockPos pos) {
@@ -76,10 +114,7 @@ public class TestBlock extends Block {
         double z = pos.getZ() + vec3.z + 0.5;
 
         if (Minecraft.getInstance().level != null) {
-            Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLES.get(), x, y, z, 0, 0, 0);
-            System.out.println("Particle" + UUID.randomUUID());
-        } else {
-            System.out.println("level is null");
+            Minecraft.getInstance().particleEngine.createParticle(ParticleTypes.HAPPY_VILLAGER, x, y, z, 0, 0, 0);
         }
     }
 }
