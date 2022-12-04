@@ -13,14 +13,22 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 
 public class TestBlock extends Block {
+    //todo: use blockstates, currently these values are shared for all blocks
     private boolean drawing;
-    private ArrayList<BlockPos> validPos;
+    //public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
+    private BlockPos targetPos;
+    private int i;
+    //public static final IntegerProperty PROGRESS = IntegerProperty.create("progress", 0, 2);
 
     public TestBlock(Properties pProperties) {
         super(pProperties);
@@ -29,8 +37,9 @@ public class TestBlock extends Block {
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         //initialise / reset data
-        this.drawing = false;
-        this.validPos = new ArrayList<>();
+        //this.drawing = BlockStateProperties. BooleanProperty.create("drawing");
+        this.targetPos = null;
+        this.i = 0;
     }
 
     /**
@@ -40,26 +49,30 @@ public class TestBlock extends Block {
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (player.getMainHandItem().getItem() == Items.ARROW) {
+        //DEBUG
+        if (player.getMainHandItem().getItem() == Items.ARROW && !level.isClientSide) {
             this.drawing = false;
-            System.out.println("switched to: " + this.drawing);
+            debug("switched to");
             return InteractionResult.SUCCESS;
         }
-        if (player.getMainHandItem().getItem() == Items.ACACIA_BOAT) {
-            System.out.println("currently: " + drawing);
+        if (player.getMainHandItem().getItem() == Items.ACACIA_BOAT && !level.isClientSide) {
+            debug("currently");
             return InteractionResult.SUCCESS;
         }
-        //todo: this is getting called on client side, use blockstate instead of this.drawing perhaps, or no this.? idk
-        if (!this.drawing) {
-            System.out.println("activated");
+
+        if (!this.drawing && !level.isClientSide) {
+            System.out.println("activated: " + this.drawing);
             activate(level, pos);
         }
         return InteractionResult.SUCCESS;
     }
 
+    /**
+     * Must be called on server side
+     */
     public void activate(Level level, BlockPos pos) {
-        int hRange = 9; //horizontal
-        int vRange = 9; //vertical
+        int hRange = 9; //horizontal range
+        int vRange = 9; //vertical range
 
         // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
@@ -73,46 +86,44 @@ public class TestBlock extends Block {
         // tick block if can
         if (!validBlockPos.isEmpty()) {
             this.drawing = true;
-            this.validPos = new ArrayList<>(validBlockPos);
-            if (!level.isClientSide) {
-                System.out.println("scheduled tick");
-                level.scheduleTick(pos, this.asBlock(), 1);
-            }
-
-        } else {
-            System.out.println("failed: no crops nearby");
+            this.targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
+            debug("scheduled tick");
+            level.scheduleTick(pos, this, 0);
         }
     }
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource pRandom) {
-        System.out.println("tick called");
-        drawLine(pos);
-        this.drawing = false;
+        //debug("tick called"); //annoying af
+        if (this.drawing) {
+            drawLine(pos, level);
+        }
     }
 
-    private void drawLine(BlockPos pos) {
-        BlockPos targetPos = this.validPos.get((int) Math.floor(Math.random() * this.validPos.size()));
-        double v = 0.5;
+    private void drawLine(BlockPos pos, ServerLevel level) {
         // vector of block
-        Vec3 v1 = new Vec3(pos.getX() + v, pos.getY() + v, pos.getZ() + v);
+        Vec3 v1 = new Vec3(pos.getX(), pos.getY(), pos.getZ());
         // vector of target block
-        Vec3 v2 = new Vec3(targetPos.getX() + v, targetPos.getY() + v, targetPos.getZ() + v);
+        Vec3 v2 = new Vec3(this.targetPos.getX(), this.targetPos.getY(), this.targetPos.getZ());
 
         // vector of v1, v2
         Vec3 v3 = new Vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
 
-        // scalar of vector (v3)
-        double div = 10 / (v3.length() * 100); // 10 particles per block (i think)
-        double percent = (div) * 100;
-        for (double i = div; i < 1; i += div) {
-            Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
-            spawnLineParticle(vLine, pos);
+        // scalar of vector (v3) to 10 particles per block (i think)
+        double div = 10 / (v3.length() * 100);
+        double mul = div * this.i;
+
+        Vec3 vLine = new Vec3(mul * v3.x, mul * v3.y, mul * v3.z);
+        spawnLineParticle(vLine, pos);
+        this.i = (this.i + 1);
+
+        if (mul >= 1) {
+            this.drawing = false;
+            this.i = 0;
+            debug("finished drawing");
+        } else {
+            level.scheduleTick(pos, this, 1);
         }
-
-        this.drawing = false;
-
-        System.out.println("drawn / currently: " + this.drawing);
     }
 
     public void spawnLineParticle(Vec3 vec3, BlockPos pos) {
@@ -123,5 +134,15 @@ public class TestBlock extends Block {
         if (Minecraft.getInstance().level != null) {
             Minecraft.getInstance().particleEngine.createParticle(ParticleTypes.HAPPY_VILLAGER, x, y, z, 0, 0, 0);
         }
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        //builder.add(DRAWING, PROGRESS);
+        super.createBlockStateDefinition(builder);
+    }
+
+    private void debug(String string) {
+        System.out.println(string + ": " + this.drawing);
     }
 }
