@@ -1,7 +1,6 @@
 package com.bavde1.lifespren.block.custom;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -18,11 +17,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class TestBlock extends Block {
-    private double timeStamp;
-    private boolean drawing = false;
+    private boolean drawing;
     private ArrayList<BlockPos> validPos;
 
     public TestBlock(Properties pProperties) {
@@ -31,7 +28,9 @@ public class TestBlock extends Block {
 
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+        //initialise / reset data
         this.drawing = false;
+        this.validPos = new ArrayList<>();
     }
 
     /**
@@ -50,39 +49,44 @@ public class TestBlock extends Block {
             System.out.println("currently: " + drawing);
             return InteractionResult.SUCCESS;
         }
+        //todo: this is getting called on client side, use blockstate instead of this.drawing perhaps, or no this.? idk
         if (!this.drawing) {
-            activate(state, level, pos);
+            System.out.println("activated");
+            activate(level, pos);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
-    public void activate(BlockState state, Level level, BlockPos pos) {
+    public void activate(Level level, BlockPos pos) {
         int hRange = 9; //horizontal
         int vRange = 9; //vertical
 
         // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
-        for (BlockPos blockPos : BlockPos.betweenClosed(pos.getX() - hRange, pos.getY() - vRange, pos.getZ() - hRange, pos.getX() + hRange, pos.getY() + vRange, pos.getZ() + hRange)) {
-            Block block = state.getBlock();
-            if (Blocks.WHEAT == block) {
-                validBlockPos.add(blockPos.immutable());
+        for (BlockPos currentBlockPos : BlockPos.betweenClosed(pos.getX() - hRange, pos.getY() - vRange, pos.getZ() - hRange, pos.getX() + hRange, pos.getY() + vRange, pos.getZ() + hRange)) {
+            Block currentBlock = level.getBlockState(currentBlockPos.immutable()).getBlock();
+            if (Blocks.WHEAT == currentBlock) {
+                validBlockPos.add(currentBlockPos.immutable());
             }
         }
 
         // tick block if can
         if (!validBlockPos.isEmpty()) {
-            this.timeStamp = System.currentTimeMillis();
             this.drawing = true;
-            this.validPos = validBlockPos;
-            //level.scheduleTick(pos, this, 20);
-            drawLine(pos);
+            this.validPos = new ArrayList<>(validBlockPos);
+            if (!level.isClientSide) {
+                System.out.println("scheduled tick");
+                level.scheduleTick(pos, this.asBlock(), 1);
+            }
 
-            System.out.println("will draw / currently: " + this.drawing);
+        } else {
+            System.out.println("failed: no crops nearby");
         }
     }
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource pRandom) {
+        System.out.println("tick called");
         drawLine(pos);
         this.drawing = false;
     }
@@ -103,13 +107,15 @@ public class TestBlock extends Block {
         double percent = (div) * 100;
         for (double i = div; i < 1; i += div) {
             Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
-            spawnParticle(vLine, pos);
+            spawnLineParticle(vLine, pos);
         }
+
+        this.drawing = false;
 
         System.out.println("drawn / currently: " + this.drawing);
     }
 
-    public void spawnParticle(Vec3 vec3, BlockPos pos) {
+    public void spawnLineParticle(Vec3 vec3, BlockPos pos) {
         double x = pos.getX() + vec3.x + 0.5;
         double y = pos.getY() + vec3.y + 0.5;
         double z = pos.getZ() + vec3.z + 0.5;
