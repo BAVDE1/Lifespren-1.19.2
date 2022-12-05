@@ -42,6 +42,10 @@ import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
 
+/* todo:
+    make proper despawning sound
+ */
+
 public class LifesprenEntity extends AmbientCreature implements IAnimatable {
     private final AnimationFactory factory = GeckoLibUtil.createFactory(this);
     private BlockPos targetPosition;

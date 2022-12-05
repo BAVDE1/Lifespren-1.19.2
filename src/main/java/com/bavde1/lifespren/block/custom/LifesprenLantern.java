@@ -23,6 +23,12 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 
+/* todo:
+    block texture (animate texture) & gecko animation
+    make place-able on floor, ceiling or wall
+    make custom particles for bonemealing plants
+ */
+
 public class LifesprenLantern extends Block {
     protected final RandomSource random = RandomSource.create();
     //todo: currently these values are shared for all blocks, blockstates & tags(requires blockentity) could fix
@@ -157,7 +163,6 @@ public class LifesprenLantern extends Block {
         }
     }
 
-    //todo: make custom particle
     public void spawnGrowthParticle(BlockPos pos) {
         for (int i = 0; i < 10; ++i) {
             int div = 7;
