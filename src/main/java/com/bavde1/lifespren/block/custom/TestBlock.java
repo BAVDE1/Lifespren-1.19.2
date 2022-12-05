@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -24,14 +23,14 @@ import java.util.ArrayList;
 
 public class TestBlock extends Block {
     //todo: use blockstates, currently these values are shared for all blocks
-    private boolean drawing;
-    //public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
+    //private boolean drawing;
+    public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
     private BlockPos targetPos;
     private int i;
-    //public static final IntegerProperty PROGRESS = IntegerProperty.create("progress", 0, 2);
 
     public TestBlock(Properties pProperties) {
         super(pProperties);
+        this.registerDefaultState(this.defaultBlockState().setValue(DRAWING, false));
     }
 
     @Override
@@ -51,18 +50,19 @@ public class TestBlock extends Block {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         //DEBUG
         if (player.getMainHandItem().getItem() == Items.ARROW && !level.isClientSide) {
-            this.drawing = false;
-            debug("switched to");
+            level.setBlock(pos, state.setValue(DRAWING, false), 3);
+            //state.setValue(DRAWING, false);
+            debug("switched to", state);
             return InteractionResult.SUCCESS;
         }
         if (player.getMainHandItem().getItem() == Items.ACACIA_BOAT && !level.isClientSide) {
-            debug("currently");
+            debug("currently", state);
             return InteractionResult.SUCCESS;
         }
 
-        if (!this.drawing && !level.isClientSide) {
-            System.out.println("activated: " + this.drawing);
-            activate(level, pos);
+        if (!state.getValue(DRAWING) && !level.isClientSide) {
+            debug("activated", state);
+            activate(state, level, pos);
         }
         return InteractionResult.SUCCESS;
     }
@@ -70,7 +70,7 @@ public class TestBlock extends Block {
     /**
      * Must be called on server side
      */
-    public void activate(Level level, BlockPos pos) {
+    public void activate(BlockState state, Level level, BlockPos pos) {
         int hRange = 9; //horizontal range
         int vRange = 9; //vertical range
 
@@ -85,22 +85,25 @@ public class TestBlock extends Block {
 
         // tick block if can
         if (!validBlockPos.isEmpty()) {
-            this.drawing = true;
+            level.setBlock(pos, state.setValue(DRAWING, true), 3);
+            //state.setValue(DRAWING, true);
             this.targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
-            debug("scheduled tick");
+            debug("scheduled tick", state);
             level.scheduleTick(pos, this, 0);
+        } else {
+            debug("none nearby", state);
         }
     }
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource pRandom) {
         //debug("tick called"); //annoying af
-        if (this.drawing) {
-            drawLine(pos, level);
+        if (state.getValue(DRAWING)) {
+            drawLine(state, pos, level);
         }
     }
 
-    private void drawLine(BlockPos pos, ServerLevel level) {
+    private void drawLine(BlockState state, BlockPos pos, ServerLevel level) {
         // vector of block
         Vec3 v1 = new Vec3(pos.getX(), pos.getY(), pos.getZ());
         // vector of target block
@@ -111,16 +114,18 @@ public class TestBlock extends Block {
 
         // scalar of vector (v3) to 10 particles per block (i think)
         double div = 10 / (v3.length() * 100);
-        double mul = div * this.i;
+        int i = this.i;
+        double mul = div * i;
 
         Vec3 vLine = new Vec3(mul * v3.x, mul * v3.y, mul * v3.z);
         spawnLineParticle(vLine, pos);
-        this.i = (this.i + 1);
+        this.i = i + 1;
 
         if (mul >= 1) {
-            this.drawing = false;
+            level.setBlock(pos, state.setValue(DRAWING, false), 3);
+            //state.setValue(DRAWING, false);
             this.i = 0;
-            debug("finished drawing");
+            debug("finished drawing", state);
         } else {
             level.scheduleTick(pos, this, 1);
         }
@@ -138,11 +143,11 @@ public class TestBlock extends Block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        //builder.add(DRAWING, PROGRESS);
+        builder.add(DRAWING);
         super.createBlockStateDefinition(builder);
     }
 
-    private void debug(String string) {
-        System.out.println(string + ": " + this.drawing);
+    public static void debug(String string, BlockState state) {
+        System.out.println(string + ": " + state.getValue(DRAWING));
     }
 }
