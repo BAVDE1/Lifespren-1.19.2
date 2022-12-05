@@ -1,14 +1,16 @@
 package com.bavde1.lifespren.block;
 
 import com.bavde1.lifespren.LifesprenMod;
-import com.bavde1.lifespren.block.custom.TestBlock;
+import com.bavde1.lifespren.block.custom.LifesprenLantern;
 import com.bavde1.lifespren.item.ModCreativeModeTab;
 import com.bavde1.lifespren.item.ModItems;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -22,8 +24,12 @@ public class ModBlocks {
             DeferredRegister.create(ForgeRegistries.BLOCKS, LifesprenMod.MOD_ID);
 
 
-    public static final RegistryObject<Block> TEST_BLOCK = registerBlock("test_block",
-            () -> new TestBlock(BlockBehaviour.Properties.of(Material.STONE).strength(6f)), ModCreativeModeTab.LIFESPREN_TAB);
+    public static final RegistryObject<Block> LIFESPREN_LANTERN = registerBlock("lifespren_lantern",
+            () -> new LifesprenLantern(BlockBehaviour
+                    .Properties.of(Material.METAL)
+                    .strength(6f)
+                    .sound(SoundType.LANTERN)
+                    .lightLevel((BlockState) -> 15)), ModCreativeModeTab.LIFESPREN_TAB);
 
 
     //register

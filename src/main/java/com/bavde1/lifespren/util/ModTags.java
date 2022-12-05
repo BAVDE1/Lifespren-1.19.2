@@ -15,6 +15,9 @@ public class ModTags {
         public static final TagKey<Block> LIFESPREN_ATTRACTING_BLOCKS
                 = tag("lifespren_attracting_blocks");
 
+        public static final TagKey<Block> LIFESPREN_LANTERN_BONEMEALABLE_BLOCKS
+                = tag("lifespren_lantern_bonemealable_blocks");
+
         //tag stuff
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(new ResourceLocation(LifesprenMod.MOD_ID, name));
