@@ -5,6 +5,7 @@ import com.bavde1.lifespren.sound.ModSounds;
 import com.bavde1.lifespren.util.ModTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -33,6 +34,7 @@ import software.bernie.geckolib3.core.controller.AnimationController;
 import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
 import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
+import software.bernie.geckolib3.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,12 +42,8 @@ import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
 
-//todo:
-// fix animation
-// fix despawn effects not working sometimes
-
-public class LifesprenEntity extends AmbientCreature implements IAnimatable { // Flying animal?
-    private final AnimationFactory factory = new AnimationFactory(this);
+public class LifesprenEntity extends AmbientCreature implements IAnimatable {
+    private final AnimationFactory factory = GeckoLibUtil.createFactory(this);
     private BlockPos targetPosition;
 
     public LifesprenEntity(EntityType<? extends AmbientCreature> pEntityType, Level pLevel) {
@@ -63,7 +61,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
         this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
         //despawn entity
         int minAliveSec = 15;
-        if (this.tickCount > minAliveSec * 20 && Math.random() < ((this.tickCount - minAliveSec * 20) / 5000F)) {
+        if (this.tickCount >= ((minAliveSec * 20) + (Math.random() * 4000))) {
             despawnLifespren();
         }
         super.tick();
@@ -92,7 +90,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
                 }
             }
 
-            //setting target pos
+            //selection of target pos
             if (!validBlockPos.isEmpty() && Math.random() < 0.85) { //85%
                 //specific target pos
                 BlockPos targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
@@ -131,10 +129,12 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     }
 
     private void despawnLifespren() {
-        //sound
-        this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
-        //particle explosion
-        if (this.level.isClientSide) {
+        if (!this.level.isClientSide) {
+            //sound
+            if (Minecraft.getInstance().level != null) {
+                Minecraft.getInstance().level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+            }
+            //particle explosion
             for (int i = 0; i < 10; ++i) {
                 int div = 7;
                 double sX = (this.random.nextFloat() * 2.0F - 1.0F) / div;
@@ -145,11 +145,13 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
                 double pY = this.getY();
                 double pZ = this.getZ();
 
-                this.level.addParticle(ModParticles.TRAIL_PARTICLES.get(), false, pX, pY, pZ, sX, sY + 0.2D, sZ);
+                if (Minecraft.getInstance().level != null) {
+                    Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLES.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
+                }
             }
+            //despawn
+            this.discard();
         }
-        //despawn
-        this.discard();
     }
 
     private static boolean isLifesprenAttracting(Block block) {
@@ -170,7 +172,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
         return false;
     }
 
-    //sounds
     @Nullable
     protected SoundEvent getAmbientSound() {
         //1/2
@@ -185,7 +186,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     protected void playStepSound(BlockPos pPos, BlockState pState) {
     }
 
-    //cancel all pushing
     public boolean isPushable() {
         return false;
     }
@@ -196,7 +196,6 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     protected void pushEntities() {
     }
 
-    //immune to fall damage
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
         return false;
     }
@@ -204,12 +203,10 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
     protected void checkFallDamage(double pY, boolean pOnGround, BlockState pState, BlockPos pPos) {
     }
 
-    //determines if the entity ignores block triggers like pressure plates
     public boolean isIgnoringBlockTriggers() {
         return true;
     }
 
-    //cannot be leashed
     public boolean canBeLeashed(Player pPlayer) {
         return false;
     }
@@ -226,7 +223,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
             area = 1.0D;
         }
 
-        //since lifespren has such a small hit box this needs to be altered
+        //since lifespren has such a small hit box this needs to be raised
         area *= 150.0D; //default is 64.0D
         return pDistance < area * area;
     }
@@ -239,7 +236,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable { //
 
     @Override
     public void registerControllers(AnimationData data) {
-        data.addAnimationController(new AnimationController(this, "controller",0, this::predicate));
+        data.addAnimationController(new AnimationController(this, "controller", 0, this::predicate));
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.bavde1.lifespren.block.custom;
 
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.util.ModTags;
+import com.bavde1.lifespren.world.level.block.state.properties.DoubleProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,6 +16,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -39,6 +42,7 @@ public class LifesprenLantern extends Block {
     }
 
     /**
+     * RANGE EXAMPLE:
      * range=3    B=block
      * |❌| |✔| |✔| |✔| |B| |✔| |✔| |✔| |❌|
      */
@@ -96,14 +100,14 @@ public class LifesprenLantern extends Block {
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
         if (this.drawing) {
-            drawLine(pos, level, randomSource);
+            drawLine(state, pos, level, randomSource);
         }
     }
 
-    private void drawLine(BlockPos pos, ServerLevel level, RandomSource randomSource) {
-        // vector of block
+    private void drawLine(BlockState state, BlockPos pos, ServerLevel level, RandomSource randomSource) {
+        // this block
         Vec3 v1 = new Vec3(pos.getX(), pos.getY(), pos.getZ());
-        // vector of target block
+        // target block
         Vec3 v2 = new Vec3(this.targetPos.getX(), this.targetPos.getY(), this.targetPos.getZ());
 
         // vector of v1, v2

@@ -29,7 +29,7 @@ public class ModBlocks {
                     .Properties.of(Material.METAL)
                     .strength(6f)
                     .sound(SoundType.LANTERN)
-                    .lightLevel((BlockState) -> 15)), ModCreativeModeTab.LIFESPREN_TAB);
+                    .lightLevel((BlockState) -> 10)), ModCreativeModeTab.LIFESPREN_TAB);
 
 
     //register
