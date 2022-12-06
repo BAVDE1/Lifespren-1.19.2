@@ -2,7 +2,6 @@ package com.bavde1.lifespren.block.custom;
 
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.util.ModTags;
-import com.bavde1.lifespren.world.level.block.state.properties.DoubleProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,16 +14,15 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 
 /* todo:
-    block texture (animate texture) & gecko animation
+    block texture (animate texture) &
     make place-able on floor, ceiling or wall
     make custom particles for bonemealing plants
  */
@@ -182,5 +180,16 @@ public class LifesprenLantern extends Block {
 
     public void debug(String string) {
         //System.out.println(string);
+    }
+/*
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return ModBlockEntities.LIFESPREN_LANTERN_ENTITY.get().create(pos, state);
+    }*/
+
+    @Override
+    public RenderShape getRenderShape(BlockState pState) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 }

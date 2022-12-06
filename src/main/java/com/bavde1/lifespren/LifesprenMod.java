@@ -1,6 +1,7 @@
 package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.block.ModBlocks;
+import com.bavde1.lifespren.block.entity.ModBlockEntities;
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
 import com.bavde1.lifespren.item.ModItems;
@@ -36,6 +37,7 @@ public class LifesprenMod {
         GeckoLib.initialize();
 
         ModBlocks.register(eventBus);
+        ModBlockEntities.register(eventBus);
         ModItems.register(eventBus);
 
         // Register the commonSetup method for modloading
