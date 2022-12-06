@@ -7,8 +7,12 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class GreenFlameParticle extends RisingParticle {
-    GreenFlameParticle(ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed) {
+/**
+ * todo: change name to ModFlameParticle
+ */
+
+public class ModFlameParticle extends RisingParticle {
+    ModFlameParticle(ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed) {
         super(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
     }
 
@@ -41,21 +45,6 @@ public class GreenFlameParticle extends RisingParticle {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static class Provider implements ParticleProvider<SimpleParticleType> {
-        private final SpriteSet sprite;
-
-        public Provider(SpriteSet pSprites) {
-            this.sprite = pSprites;
-        }
-
-        public Particle createParticle(SimpleParticleType pType, ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed) {
-            GreenFlameParticle GreenFlameParticle = new GreenFlameParticle(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
-            GreenFlameParticle.pickSprite(this.sprite);
-            return GreenFlameParticle;
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
     public static class SmallFlameProvider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprite;
 
@@ -64,10 +53,26 @@ public class GreenFlameParticle extends RisingParticle {
         }
 
         public Particle createParticle(SimpleParticleType pType, ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed) {
-            GreenFlameParticle GreenFlameParticle = new GreenFlameParticle(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
-            GreenFlameParticle.pickSprite(this.sprite);
-            GreenFlameParticle.scale(0.4F);
-            return GreenFlameParticle;
+            ModFlameParticle ModFlameParticle = new ModFlameParticle(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
+            ModFlameParticle.pickSprite(this.sprite);
+            ModFlameParticle.scale(0.5F);
+            return ModFlameParticle;
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static class SmallerFlameProvider implements ParticleProvider<SimpleParticleType> {
+        private final SpriteSet sprite;
+
+        public SmallerFlameProvider(SpriteSet pSprites) {
+            this.sprite = pSprites;
+        }
+
+        public Particle createParticle(SimpleParticleType pType, ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed) {
+            ModFlameParticle ModFlameParticle = new ModFlameParticle(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
+            ModFlameParticle.pickSprite(this.sprite);
+            ModFlameParticle.scale(0.3F);
+            return ModFlameParticle;
         }
     }
 }

@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -14,7 +16,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
     make place-able on floor, ceiling or wall
     make custom particles for bonemealing plants
     make green flame particles
+    make waterloggable?
  */
 
 public class LifesprenLantern extends Block {
@@ -79,8 +81,8 @@ public class LifesprenLantern extends Block {
      * Must be called on server side
      */
     public void activate(Level level, BlockPos pos) {
-        int hRange = 9; //horizontal range
-        int vRange = 9; //vertical range
+        int hRange = 7; //horizontal range
+        int vRange = 7; //vertical range
 
         // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
@@ -108,8 +110,13 @@ public class LifesprenLantern extends Block {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
         if (this.drawing) {
             drawLine(state, pos, level, randomSource);
-        } else {
-            spawnPassiveParticle(level, pos);
+        }
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource randomSource) {
+        if (!this.drawing) {
+            spawnFlameParticle(level, pos, randomSource);
         }
     }
 
@@ -183,20 +190,21 @@ public class LifesprenLantern extends Block {
         }
     }
 
-    public void spawnPassiveParticle(ServerLevel level, BlockPos pos) {
+    public void spawnFlameParticle(Level level, BlockPos pos, RandomSource random) {
         double pX = pos.getX() + 0.5;
         double pY = pos.getY() + getParticleOffset();
         double pZ = pos.getZ() + 0.5;
 
-        if (Minecraft.getInstance().level != null) {
-            Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_FLAME_PARTICLE.get(), pX, pY, pZ, 0, 0, 0);
+        if (random.nextFloat() < 0.2F) {
+            level.playLocalSound(pX, pY, pZ, SoundEvents.CANDLE_AMBIENT, SoundSource.BLOCKS, 1.0F + random.nextFloat(), random.nextFloat() * 0.7F + 0.3F, false);
         }
-        level.scheduleTick(pos, this, 10);
+        level.addParticle(ModParticles.GREEN_FLAME_PARTICLE.get(), pX, pY, pZ, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ModParticles.SMALL_GREEN_FLAME_PARTICLE.get(), pX + 0.09, pY - 0.1, pZ + 0.09, 0.0D, 0.0D, 0.0D);
     }
 
     private double getParticleOffset() {
         //todo: change this depending on how lantern is placed
-        return 0.3;
+        return 0.35;
     }
 
     public void debug(String string) {

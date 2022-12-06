@@ -5,7 +5,7 @@ import com.bavde1.lifespren.LifesprenMod;
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
 import com.bavde1.lifespren.particle.ModParticles;
-import com.bavde1.lifespren.particle.custom.GreenFlameParticle;
+import com.bavde1.lifespren.particle.custom.ModFlameParticle;
 import com.bavde1.lifespren.particle.custom.TrailParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -32,7 +32,9 @@ public class ModEvents {
                     TrailParticle.Provider::new);
 
             Minecraft.getInstance().particleEngine.register(ModParticles.GREEN_FLAME_PARTICLE.get(),
-                    GreenFlameParticle.Provider::new);
+                    ModFlameParticle.SmallFlameProvider::new);
+            Minecraft.getInstance().particleEngine.register(ModParticles.SMALL_GREEN_FLAME_PARTICLE.get(),
+                    ModFlameParticle.SmallerFlameProvider::new);
         }
     }
 }
