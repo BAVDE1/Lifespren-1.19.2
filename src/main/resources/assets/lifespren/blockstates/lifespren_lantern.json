@@ -1,5 +1,7 @@
 {
   "variants": {
-    "": { "model": "lifespren:block/lifespren_lantern" }
+    "": {
+      "model": "lifespren:block/lifespren_lantern"
+    }
   }
 }

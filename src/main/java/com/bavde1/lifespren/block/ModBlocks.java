@@ -4,6 +4,7 @@ import com.bavde1.lifespren.LifesprenMod;
 import com.bavde1.lifespren.block.custom.LifesprenLantern;
 import com.bavde1.lifespren.item.ModCreativeModeTab;
 import com.bavde1.lifespren.item.ModItems;
+import net.minecraft.client.particle.SoulParticle;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;

@@ -1,14 +1,14 @@
 package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.block.ModBlocks;
-import com.bavde1.lifespren.block.entity.ModBlockEntities;
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
 import com.bavde1.lifespren.item.ModItems;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.sound.ModSounds;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -37,7 +37,6 @@ public class LifesprenMod {
         GeckoLib.initialize();
 
         ModBlocks.register(eventBus);
-        ModBlockEntities.register(eventBus);
         ModItems.register(eventBus);
 
         // Register the commonSetup method for modloading
@@ -58,7 +57,7 @@ public class LifesprenMod {
         // for client setup
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.translucent());
             //render entities
             EntityRenderers.register(ModEntityTypes.LIFESPREN_MOB.get(), LifesprenRenderer::new);
         }

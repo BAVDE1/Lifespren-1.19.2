@@ -41,6 +41,7 @@ public class LifesprenLantern extends Block {
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         //initialise / reset data
+        this.drawing = false;
         this.targetPos = null;
         this.lineProgress = 0;
     }
@@ -153,7 +154,7 @@ public class LifesprenLantern extends Block {
 
     public void spawnLineParticle(Vec3 vec3, BlockPos pos) {
         double x = pos.getX() + vec3.x + 0.5;
-        double y = pos.getY() + vec3.y + 0.5;
+        double y = pos.getY() + vec3.y + getParticleOffset();
         double z = pos.getZ() + vec3.z + 0.5;
 
         if (Minecraft.getInstance().level != null) {
@@ -169,7 +170,7 @@ public class LifesprenLantern extends Block {
             double sZ = (this.random.nextFloat() * 2.0F - 1.0F) / div;
 
             double pX = pos.getX() + 0.5;
-            double pY = pos.getY() + 0.5;
+            double pY = pos.getY() + getParticleOffset();
             double pZ = pos.getZ() + 0.5;
 
             if (Minecraft.getInstance().level != null) {
@@ -178,18 +179,12 @@ public class LifesprenLantern extends Block {
         }
     }
 
+    private double getParticleOffset() {
+        //todo: change this depending on how lantern is placed
+        return 0.3;
+    }
+
     public void debug(String string) {
         //System.out.println(string);
-    }
-/*
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return ModBlockEntities.LIFESPREN_LANTERN_ENTITY.get().create(pos, state);
-    }*/
-
-    @Override
-    public RenderShape getRenderShape(BlockState pState) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 }
