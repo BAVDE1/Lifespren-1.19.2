@@ -22,9 +22,10 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 
 /* todo:
-    block texture (animate texture) &
+    block texture (animate texture)
     make place-able on floor, ceiling or wall
     make custom particles for bonemealing plants
+    make green flame particles
  */
 
 public class LifesprenLantern extends Block {

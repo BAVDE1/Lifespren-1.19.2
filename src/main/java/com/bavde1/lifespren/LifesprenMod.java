@@ -57,7 +57,7 @@ public class LifesprenMod {
         // for client setup
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.cutout());
             //render entities
             EntityRenderers.register(ModEntityTypes.LIFESPREN_MOB.get(), LifesprenRenderer::new);
         }
