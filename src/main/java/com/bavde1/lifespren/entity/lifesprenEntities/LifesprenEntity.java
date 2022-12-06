@@ -150,7 +150,7 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable {
                 double pZ = this.getZ();
 
                 if (Minecraft.getInstance().level != null) {
-                    Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLES.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
+                    Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLE.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
                 }
             }
             //despawn

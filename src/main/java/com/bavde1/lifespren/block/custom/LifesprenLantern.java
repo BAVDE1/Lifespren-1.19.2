@@ -40,11 +40,12 @@ public class LifesprenLantern extends Block {
     }
 
     @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         //initialise / reset data
         this.drawing = false;
         this.targetPos = null;
         this.lineProgress = 0;
+        level.scheduleTick(pos, this, 1);
     }
 
     /**
@@ -107,6 +108,8 @@ public class LifesprenLantern extends Block {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
         if (this.drawing) {
             drawLine(state, pos, level, randomSource);
+        } else {
+            spawnPassiveParticle(level, pos);
         }
     }
 
@@ -175,9 +178,20 @@ public class LifesprenLantern extends Block {
             double pZ = pos.getZ() + 0.5;
 
             if (Minecraft.getInstance().level != null) {
-                Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLES.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
+                Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLE.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
             }
         }
+    }
+
+    public void spawnPassiveParticle(ServerLevel level, BlockPos pos) {
+        double pX = pos.getX() + 0.5;
+        double pY = pos.getY() + getParticleOffset();
+        double pZ = pos.getZ() + 0.5;
+
+        if (Minecraft.getInstance().level != null) {
+            Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_FLAME_PARTICLE.get(), pX, pY, pZ, 0, 0, 0);
+        }
+        level.scheduleTick(pos, this, 10);
     }
 
     private double getParticleOffset() {

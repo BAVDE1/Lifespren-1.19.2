@@ -6,9 +6,9 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class TrailParticles extends SimpleAnimatedParticle {
-    protected TrailParticles(ClientLevel level, double xCoord, double yCoord, double zCoord,
-                             SpriteSet spriteSet, double xd, double yd, double zd) {
+public class TrailParticle extends SimpleAnimatedParticle {
+    protected TrailParticle(ClientLevel level, double xCoord, double yCoord, double zCoord,
+                            SpriteSet spriteSet, double xd, double yd, double zd) {
         super(level, xCoord, yCoord, zCoord, spriteSet, 0.2F);
 
         this.friction = 0.8F;
@@ -47,7 +47,7 @@ public class TrailParticles extends SimpleAnimatedParticle {
         public Particle createParticle(SimpleParticleType particleType, ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
-            return new TrailParticles(level, x, y, z, this.sprites, dx, dy, dz);
+            return new TrailParticle(level, x, y, z, this.sprites, dx, dy, dz);
         }
     }
 }
