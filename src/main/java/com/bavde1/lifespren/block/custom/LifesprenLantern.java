@@ -41,8 +41,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 /* todo:
-    organise functionality ready for new augments, (perhaps into different classes)
-    currently these values are shared for all blocks, blockstates & tags(requires blockentity) could fix
+    Make block entity - use tags to fix drawing, line progress
+    organise functionality - prep for adding augments, (perhaps into different classes)
     block gui for augments
  */
 
@@ -54,7 +54,7 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
     private BlockPos targetPos;
     private boolean drawing;
-    private int lineProgress;
+    private double lineProgress;
 
     public LifesprenLantern(Properties pProperties) {
         super(pProperties);
@@ -67,7 +67,6 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         this.drawing = false;
         this.targetPos = null;
         this.lineProgress = 0;
-        level.scheduleTick(pos, this, 1);
     }
 
     @Nullable
@@ -156,14 +155,14 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
         // scalar of vector (v3) to 10 particles per block (i think)
         double div = 10 / (v3.length() * 100);
-        int i = this.lineProgress;
-        double mul = div * i;
+        this.lineProgress = this.lineProgress == 0 ? div : div * (this.lineProgress / div);
+        double i = this.lineProgress;
 
-        Vec3 vLine = new Vec3(mul * v3.x, mul * v3.y, mul * v3.z);
+        Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
         spawnLineParticle(vLine, state, pos);
-        this.lineProgress = i + 1;
+        this.lineProgress = this.lineProgress + div;
 
-        if (mul >= 1) {
+        if (i >= 1) {
             this.drawing = false;
             this.lineProgress = 0;
             performBonemealOnTargetBlock(level, randomSource);
