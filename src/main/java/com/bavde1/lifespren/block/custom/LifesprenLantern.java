@@ -1,11 +1,11 @@
 package com.bavde1.lifespren.block.custom;
 
 import com.bavde1.lifespren.particle.ModParticles;
+import com.bavde1.lifespren.util.LanternUtil;
 import com.bavde1.lifespren.util.ModTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,7 +13,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 
 /* todo:
     Make block entity - use tags to fix drawing, line progress
-    organise functionality - prep for adding augments, (perhaps into different classes)
     block gui for augments
  */
 
@@ -52,25 +50,27 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
     protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
     protected static final VoxelShape AABB_HANGING = Shapes.or(Block.box(5.0D, 4.0D, 5.0D, 11.0D, 12.0D, 11.0D), Block.box(6.0D, 12.0D, 6.0D, 10.0D, 14.0D, 10.0D));
 
-    private BlockPos targetPos;
-    private boolean drawing;
-    private double lineProgress;
+    //public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
+
+    public static BlockPos targetPos;
+    public static boolean drawing;
+    public static double lineProgress;
 
     public LifesprenLantern(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(HANGING, Boolean.FALSE).setValue(WATERLOGGED, Boolean.FALSE));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(HANGING, Boolean.FALSE)
+                .setValue(WATERLOGGED, Boolean.FALSE));
     }
 
-    @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         //initialise / reset data
-        this.drawing = false;
-        this.targetPos = null;
-        this.lineProgress = 0;
+        drawing = false;
+        targetPos = null;
+        lineProgress = 0;
     }
 
     @Nullable
-    @Override
     public BlockState getStateForPlacement(BlockPlaceContext pContext) {
         FluidState fluidstate = pContext.getLevel().getFluidState(pContext.getClickedPos());
 
@@ -85,20 +85,14 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         return null;
     }
 
-    @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        return pState.getValue(HANGING) ? AABB_HANGING : AABB;
-    }
-
     /**
      * RANGE EXAMPLE:
      * range=3    B=block
      * |❌| |✔| |✔| |✔| |B| |✔| |✔| |✔| |❌|
      */
 
-    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!this.drawing && !level.isClientSide) {
+        if (!drawing && !level.isClientSide) {
             activate(level, pos);
         }
         return InteractionResult.SUCCESS;
@@ -113,58 +107,51 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
         // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
-        for (BlockPos currentBlockPos : BlockPos.betweenClosed(pos.getX() - hRange, pos.getY() - vRange, pos.getZ() - hRange, pos.getX() + hRange, pos.getY() + vRange, pos.getZ() + hRange)) {
-            Block currentBlock = level.getBlockState(currentBlockPos.immutable()).getBlock();
+
+        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
+            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
             //if block is bonemeal-able add to list
-            if (isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), false)) {
+            if (isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
                 validBlockPos.add(currentBlockPos.immutable());
             }
         }
 
         // tick block if can
         if (!validBlockPos.isEmpty()) {
-            this.drawing = true;
+            drawing = true;
             //selects random item from list
-            this.targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
+            targetPos = LanternUtil.getRandomBlockPosFromArray(validBlockPos);
             level.scheduleTick(pos, this, 0);
         }
     }
 
-    @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
-        if (this.drawing) {
+        if (drawing) {
             drawLine(state, pos, level, randomSource);
         }
     }
 
-    @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource randomSource) {
-        if (!this.drawing) {
+        if (!drawing) {
             spawnFlameParticle(level, state, pos, randomSource);
         }
     }
 
     private void drawLine(BlockState state, BlockPos pos, ServerLevel level, RandomSource randomSource) {
-        // this block
-        Vec3 v1 = new Vec3(pos.getX(), pos.getY(), pos.getZ());
-        // target block
-        Vec3 v2 = new Vec3(this.targetPos.getX(), this.targetPos.getY(), this.targetPos.getZ());
+        // vector of pos, targetPos
+        Vec3 v3 = LanternUtil.getVecFrom2BlockPos(pos, targetPos);
 
-        // vector of v1, v2
-        Vec3 v3 = new Vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+        double div = LanternUtil.getVecScalarForStraightLine(v3);
+        lineProgress = lineProgress == 0 ? div : div * (lineProgress / div);
+        double i = lineProgress;
 
-        // scalar of vector (v3) to 10 particles per block (i think)
-        double div = 10 / (v3.length() * 100);
-        this.lineProgress = this.lineProgress == 0 ? div : div * (this.lineProgress / div);
-        double i = this.lineProgress;
-
-        Vec3 vLine = new Vec3(i * v3.x, i * v3.y, i * v3.z);
+        Vec3 vLine = LanternUtil.getNewVecForStraightLine(v3, i);
         spawnLineParticle(vLine, state, pos);
-        this.lineProgress = this.lineProgress + div;
+        lineProgress = lineProgress + div;
 
         if (i >= 1) {
-            this.drawing = false;
-            this.lineProgress = 0;
+            drawing = false;
+            lineProgress = 0;
             performBonemealOnTargetBlock(level, randomSource);
         } else {
             level.scheduleTick(pos, this, 1);
@@ -172,18 +159,18 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
     }
 
     private void performBonemealOnTargetBlock(ServerLevel level, RandomSource randomSource) {
-        BlockPos targetBlockPos = this.targetPos;
-        Block targetBlock = level.getBlockState(targetBlockPos).getBlock();
-        if (isValidBonemealableBlock(level, targetBlockPos, targetBlock, level.getBlockState(targetBlockPos), false)) {
-            ((BonemealableBlock) targetBlock).performBonemeal(level, randomSource, this.targetPos, level.getBlockState(this.targetPos));
-            spawnGrowthParticle(targetBlockPos);
+        Block targetBlock = LanternUtil.getBlockAtPos(level, targetPos);
+
+        if (isValidBonemealableBlock(level, targetPos, targetBlock, level.getBlockState(targetPos), false)) {
+            ((BonemealableBlock) targetBlock).performBonemeal(level, randomSource, targetPos, level.getBlockState(targetPos));
+            spawnGrowthParticle(targetPos);
         }
     }
 
-    private boolean isValidBonemealableBlock(Level level, BlockPos blockPos, Block block, BlockState blockState, boolean isClient) {
+    public static boolean isValidBonemealableBlock(Level level, BlockPos blockPos, Block block, BlockState blockState, boolean isClient) {
         return block instanceof BonemealableBlock
                 && ((BonemealableBlock) block).isValidBonemealTarget(level, blockPos, blockState, isClient) &&
-                blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_BLOCKS);
+                blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
     }
 
     public void spawnLineParticle(Vec3 vec3, BlockState state, BlockPos pos) {
@@ -222,6 +209,14 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
     private double getParticleOffset(BlockState state) {
         return getConnectedDirection(state) == Direction.UP ? 0.35 : 0.6;
+    }
+
+    /**
+     * Default lantern block stuff
+     */
+
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        return pState.getValue(HANGING) ? AABB_HANGING : AABB;
     }
 
     public PushReaction getPistonPushReaction(BlockState pState) {
