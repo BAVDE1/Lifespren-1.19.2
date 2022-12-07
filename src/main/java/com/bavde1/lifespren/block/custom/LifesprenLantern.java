@@ -4,6 +4,7 @@ import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.util.ModTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -13,24 +14,42 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
 /* todo:
-    block texture (animate texture)
     make place-able on floor, ceiling or wall
-    make custom particles for bonemealing plants
-    make green flame particles
     make waterloggable?
  */
 
-public class LifesprenLantern extends Block {
+public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
+    public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
+    protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+
     protected final RandomSource random = RandomSource.create();
     //todo: currently these values are shared for all blocks, blockstates & tags(requires blockentity) could fix
     private BlockPos targetPos;
@@ -39,6 +58,7 @@ public class LifesprenLantern extends Block {
 
     public LifesprenLantern(Properties pProperties) {
         super(pProperties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(WATERLOGGED, Boolean.FALSE));
     }
 
     @Override
@@ -50,6 +70,27 @@ public class LifesprenLantern extends Block {
         level.scheduleTick(pos, this, 1);
     }
 
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext pContext) {
+        FluidState fluidstate = pContext.getLevel().getFluidState(pContext.getClickedPos());
+
+        for(Direction direction : pContext.getNearestLookingDirections()) {
+            if (direction.getAxis() == Direction.Axis.Y) {
+                BlockState blockstate = this.defaultBlockState().setValue(HANGING, direction == Direction.UP);
+                if (blockstate.canSurvive(pContext.getLevel(), pContext.getClickedPos())) {
+                    return blockstate.setValue(WATERLOGGED, fluidstate.getType() == Fluids.WATER);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        return AABB;
+    }
+
     /**
      * RANGE EXAMPLE:
      * range=3    B=block
@@ -58,20 +99,7 @@ public class LifesprenLantern extends Block {
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        //DEBUG
-        if (player.getMainHandItem().getItem() == Items.ARROW && !level.isClientSide) {
-            this.drawing = false;
-            //state.setValue(DRAWING, false);
-            debug("switched to");
-            return InteractionResult.SUCCESS;
-        }
-        if (player.getMainHandItem().getItem() == Items.ACACIA_BOAT && !level.isClientSide) {
-            debug("currently");
-            return InteractionResult.SUCCESS;
-        }
-
         if (!this.drawing && !level.isClientSide) {
-            debug("activated");
             activate(level, pos);
         }
         return InteractionResult.SUCCESS;
@@ -99,10 +127,7 @@ public class LifesprenLantern extends Block {
             this.drawing = true;
             //selects random item from list
             this.targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
-            debug("scheduled tick");
             level.scheduleTick(pos, this, 0);
-        } else {
-            debug("none nearby");
         }
     }
 
@@ -142,7 +167,6 @@ public class LifesprenLantern extends Block {
             this.drawing = false;
             this.lineProgress = 0;
             performBonemealOnTargetBlock(level, randomSource);
-            debug("finished drawing");
         } else {
             level.scheduleTick(pos, this, 1);
         }
@@ -169,23 +193,18 @@ public class LifesprenLantern extends Block {
         double z = pos.getZ() + vec3.z + 0.5;
 
         if (Minecraft.getInstance().level != null) {
-            Minecraft.getInstance().particleEngine.createParticle(ParticleTypes.HAPPY_VILLAGER, x, y, z, 0, 0, 0);
+            Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_LINE_PARTICLE.get(), x, y, z, 0, 0, 0);
         }
     }
 
     public void spawnGrowthParticle(BlockPos pos) {
-        for (int i = 0; i < 10; ++i) {
-            int div = 7;
-            double sX = (this.random.nextFloat() * 2.0F - 1.0F) / div;
-            double sY = (this.random.nextFloat() * 2.0F - 1.0F) / div;
-            double sZ = (this.random.nextFloat() * 2.0F - 1.0F) / div;
-
-            double pX = pos.getX() + 0.5;
-            double pY = pos.getY() + getParticleOffset();
-            double pZ = pos.getZ() + 0.5;
+        for (int i = 0; i < 16; ++i) {
+            double pX = pos.getX() + Math.random();
+            double pY = pos.getY() + Math.random();
+            double pZ = pos.getZ() + Math.random();
 
             if (Minecraft.getInstance().level != null) {
-                Minecraft.getInstance().particleEngine.createParticle(ModParticles.TRAIL_PARTICLE.get(), pX, pY, pZ, sX, sY + 0.2D, sZ);
+                Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_LINE_PARTICLE.get(), pX, pY, pZ, 0, 0, 0);
             }
         }
     }
@@ -199,7 +218,7 @@ public class LifesprenLantern extends Block {
             level.playLocalSound(pX, pY, pZ, SoundEvents.CANDLE_AMBIENT, SoundSource.BLOCKS, 1.0F + random.nextFloat(), random.nextFloat() * 0.7F + 0.3F, false);
         }
         level.addParticle(ModParticles.GREEN_FLAME_PARTICLE.get(), pX, pY, pZ, 0.0D, 0.0D, 0.0D);
-        level.addParticle(ModParticles.SMALL_GREEN_FLAME_PARTICLE.get(), pX + 0.09, pY - 0.1, pZ + 0.09, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ModParticles.SMALL_GREEN_FLAME_PARTICLE.get(), pX + 0.09, pY - 0.095, pZ + 0.09, 0.0D, 0.0D, 0.0D);
     }
 
     private double getParticleOffset() {
@@ -207,7 +226,36 @@ public class LifesprenLantern extends Block {
         return 0.35;
     }
 
-    public void debug(String string) {
-        //System.out.println(string);
+    public PushReaction getPistonPushReaction(BlockState pState) {
+        return PushReaction.DESTROY;
+    }
+
+    protected static Direction getConnectedDirection(BlockState pState) {
+        return pState.getValue(HANGING) ? Direction.DOWN : Direction.UP;
+    }
+
+    public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
+        Direction direction = getConnectedDirection(pState).getOpposite();
+        return Block.canSupportCenter(pLevel, pPos.relative(direction), direction.getOpposite());
+    }
+
+    public BlockState updateShape(BlockState pState, Direction pDirection, BlockState pNeighborState, LevelAccessor pLevel, BlockPos pCurrentPos, BlockPos pNeighborPos) {
+        if (pState.getValue(WATERLOGGED)) {
+            pLevel.scheduleTick(pCurrentPos, Fluids.WATER, Fluids.WATER.getTickDelay(pLevel));
+        }
+
+        return getConnectedDirection(pState).getOpposite() == pDirection && !pState.canSurvive(pLevel, pCurrentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(pState, pDirection, pNeighborState, pLevel, pCurrentPos, pNeighborPos);
+    }
+
+    public FluidState getFluidState(BlockState pState) {
+        return pState.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(pState);
+    }
+
+    public boolean isPathfindable(BlockState pState, BlockGetter pLevel, BlockPos pPos, PathComputationType pType) {
+        return false;
+    }
+
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
+        pBuilder.add(WATERLOGGED, HANGING);
     }
 }

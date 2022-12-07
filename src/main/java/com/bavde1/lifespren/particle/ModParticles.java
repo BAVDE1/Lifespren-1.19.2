@@ -20,6 +20,9 @@ public class ModParticles {
     public static final RegistryObject<SimpleParticleType> SMALL_GREEN_FLAME_PARTICLE =
             PARTICLE_TYPES.register("small_green_flame_particle", () -> new SimpleParticleType(true));
 
+    public static final RegistryObject<SimpleParticleType> GREEN_LINE_PARTICLE =
+            PARTICLE_TYPES.register("green_line_particle", () -> new SimpleParticleType(true));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
