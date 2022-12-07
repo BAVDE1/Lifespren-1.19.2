@@ -41,24 +41,24 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 /* todo:
-    make place-able on floor, ceiling or wall
-    make waterloggable?
+    organise functionality ready for new augments, (perhaps into different classes)
+    currently these values are shared for all blocks, blockstates & tags(requires blockentity) could fix
+    block gui for augments
  */
 
 public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
     public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
-    protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
+    protected static final VoxelShape AABB_HANGING = Shapes.or(Block.box(5.0D, 4.0D, 5.0D, 11.0D, 12.0D, 11.0D), Block.box(6.0D, 12.0D, 6.0D, 10.0D, 14.0D, 10.0D));
 
-    protected final RandomSource random = RandomSource.create();
-    //todo: currently these values are shared for all blocks, blockstates & tags(requires blockentity) could fix
     private BlockPos targetPos;
     private boolean drawing;
     private int lineProgress;
 
     public LifesprenLantern(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(WATERLOGGED, Boolean.FALSE));
+        this.registerDefaultState(this.stateDefinition.any().setValue(HANGING, Boolean.FALSE).setValue(WATERLOGGED, Boolean.FALSE));
     }
 
     @Override
@@ -88,7 +88,7 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        return AABB;
+        return pState.getValue(HANGING) ? AABB_HANGING : AABB;
     }
 
     /**
@@ -141,7 +141,7 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource randomSource) {
         if (!this.drawing) {
-            spawnFlameParticle(level, pos, randomSource);
+            spawnFlameParticle(level, state, pos, randomSource);
         }
     }
 
@@ -160,7 +160,7 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         double mul = div * i;
 
         Vec3 vLine = new Vec3(mul * v3.x, mul * v3.y, mul * v3.z);
-        spawnLineParticle(vLine, pos);
+        spawnLineParticle(vLine, state, pos);
         this.lineProgress = i + 1;
 
         if (mul >= 1) {
@@ -187,9 +187,9 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
                 blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_BLOCKS);
     }
 
-    public void spawnLineParticle(Vec3 vec3, BlockPos pos) {
+    public void spawnLineParticle(Vec3 vec3, BlockState state, BlockPos pos) {
         double x = pos.getX() + vec3.x + 0.5;
-        double y = pos.getY() + vec3.y + getParticleOffset();
+        double y = pos.getY() + vec3.y + getParticleOffset(state);
         double z = pos.getZ() + vec3.z + 0.5;
 
         if (Minecraft.getInstance().level != null) {
@@ -209,9 +209,9 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         }
     }
 
-    public void spawnFlameParticle(Level level, BlockPos pos, RandomSource random) {
+    public void spawnFlameParticle(Level level, BlockState state, BlockPos pos, RandomSource random) {
         double pX = pos.getX() + 0.5;
-        double pY = pos.getY() + getParticleOffset();
+        double pY = pos.getY() + getParticleOffset(state);
         double pZ = pos.getZ() + 0.5;
 
         if (random.nextFloat() < 0.2F) {
@@ -221,9 +221,8 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         level.addParticle(ModParticles.SMALL_GREEN_FLAME_PARTICLE.get(), pX + 0.09, pY - 0.095, pZ + 0.09, 0.0D, 0.0D, 0.0D);
     }
 
-    private double getParticleOffset() {
-        //todo: change this depending on how lantern is placed
-        return 0.35;
+    private double getParticleOffset(BlockState state) {
+        return getConnectedDirection(state) == Direction.UP ? 0.35 : 0.6;
     }
 
     public PushReaction getPistonPushReaction(BlockState pState) {
@@ -243,7 +242,6 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
         if (pState.getValue(WATERLOGGED)) {
             pLevel.scheduleTick(pCurrentPos, Fluids.WATER, Fluids.WATER.getTickDelay(pLevel));
         }
-
         return getConnectedDirection(pState).getOpposite() == pDirection && !pState.canSurvive(pLevel, pCurrentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(pState, pDirection, pNeighborState, pLevel, pCurrentPos, pNeighborPos);
     }
 

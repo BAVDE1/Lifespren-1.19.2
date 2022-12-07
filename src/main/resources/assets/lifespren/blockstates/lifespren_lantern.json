@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "hanging=false": {
       "model": "lifespren:block/lifespren_lantern"
+    },
+    "hanging=true": {
+      "model": "lifespren:block/lifespren_lantern_hanging"
     }
   }
 }
