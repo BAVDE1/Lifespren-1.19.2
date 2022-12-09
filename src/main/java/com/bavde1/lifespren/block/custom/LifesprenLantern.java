@@ -1,10 +1,9 @@
 package com.bavde1.lifespren.block.custom;
 
-import com.bavde1.lifespren.block.entity.LifesprenLanternBLockEntity;
+import com.bavde1.lifespren.block.entity.LifesprenLanternBlockEntity;
 import com.bavde1.lifespren.block.entity.ModBlockEntities;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.util.LanternUtil;
-import com.bavde1.lifespren.util.ModTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,20 +40,17 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-
 /* todo:
-    Make block entity - use tags to fix drawing
-    block gui for augments
+    use container data (or something) for targetPos, lineProgress
  */
 
 public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterloggedBlock {
+    public static final BooleanProperty ON_COOLDOWN = BooleanProperty.create("on_cooldown");
+
     public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
     protected static final VoxelShape AABB_HANGING = Shapes.or(Block.box(5.0D, 4.0D, 5.0D, 11.0D, 12.0D, 11.0D), Block.box(6.0D, 12.0D, 6.0D, 10.0D, 14.0D, 10.0D));
-
-    //public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
 
     public static BlockPos targetPos;
     public static boolean drawing;
@@ -64,7 +60,8 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(HANGING, Boolean.FALSE)
-                .setValue(WATERLOGGED, Boolean.FALSE));
+                .setValue(WATERLOGGED, Boolean.FALSE)
+                .setValue(ON_COOLDOWN, Boolean.FALSE));
     }
 
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -98,16 +95,20 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
             if (!player.isCrouching()) {
                 if (!level.isClientSide) {
-                    BlockEntity blockEntity = level.getBlockEntity(pos);
-                    if (blockEntity instanceof LifesprenLanternBLockEntity) {
-                        NetworkHooks.openScreen(((ServerPlayer) player), (LifesprenLanternBLockEntity) blockEntity, pos);
+                    LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
+                    if (blockEntity != null) {
+                        NetworkHooks.openScreen(((ServerPlayer) player), blockEntity, pos);
                     } else {
                         throw new IllegalStateException("Our Container provider is missing!");
                     }
                 }
             } else {
                 if (!drawing && !level.isClientSide) {
-                    activate(level, pos);
+                    LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
+                    if (blockEntity != null) {
+                        blockEntity.activate(level, pos, blockEntity);
+                    }
+                    //activate(level, pos);
                 }
             }
         return InteractionResult.SUCCESS;
@@ -116,7 +117,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     /**
      * Must be called on server side
      */
-    public void activate(Level level, BlockPos pos) {
+    /*public void activate(Level level, BlockPos pos) {
         int hRange = 6; //horizontal range
         int vRange = 3; //vertical range
 
@@ -126,7 +127,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
         for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
             Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
             //if block is bonemeal-able add to list
-            if (isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
+            if (LanternUtil.isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
                 validBlockPos.add(currentBlockPos.immutable());
             }
         }
@@ -138,7 +139,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
             targetPos = LanternUtil.getRandomBlockPosFromArray(validBlockPos);
             level.scheduleTick(pos, this, 0);
         }
-    }
+    }*/
 
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
         if (drawing) {
@@ -176,16 +177,10 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     private void performBonemealOnTargetBlock(ServerLevel level, RandomSource randomSource) {
         Block targetBlock = LanternUtil.getBlockAtPos(level, targetPos);
 
-        if (isValidBonemealableBlock(level, targetPos, targetBlock, level.getBlockState(targetPos), false)) {
+        if (LanternUtil.isValidBonemealableBlock(level, targetPos, targetBlock, level.getBlockState(targetPos), false)) {
             ((BonemealableBlock) targetBlock).performBonemeal(level, randomSource, targetPos, level.getBlockState(targetPos));
             spawnGrowthParticle(targetPos);
         }
-    }
-
-    public static boolean isValidBonemealableBlock(Level level, BlockPos blockPos, Block block, BlockState blockState, boolean isClient) {
-        return block instanceof BonemealableBlock
-                && ((BonemealableBlock) block).isValidBonemealTarget(level, blockPos, blockState, isClient) &&
-                blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
     }
 
     public void spawnLineParticle(Vec3 vec3, BlockState state, BlockPos pos) {
@@ -263,7 +258,12 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     }
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(WATERLOGGED, HANGING);
+        pBuilder.add(WATERLOGGED, HANGING, ON_COOLDOWN);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState pState) {
+        return RenderShape.MODEL;
     }
 
     /**
@@ -271,16 +271,11 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
      */
 
     @Override
-    public RenderShape getRenderShape(BlockState pState) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof LifesprenLanternBLockEntity) {
-                ((LifesprenLanternBLockEntity) blockEntity).drops();
+            if (blockEntity instanceof LifesprenLanternBlockEntity) {
+                ((LifesprenLanternBlockEntity) blockEntity).drops();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -289,12 +284,22 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new LifesprenLanternBLockEntity(pos, state);
+        return new LifesprenLanternBlockEntity(pos, state);
+    }
+
+    private LifesprenLanternBlockEntity getBlockEntity(Level level, BlockPos pos) {
+        BlockEntity entity = level.getBlockEntity(pos);
+        if (entity instanceof LifesprenLanternBlockEntity) {
+            return (LifesprenLanternBlockEntity) entity;
+        } else {
+            return null;
+        }
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), LifesprenLanternBLockEntity::tick);
+        //if (getBlockEntity(level, ))
+        return createTickerHelper(type, ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), LifesprenLanternBlockEntity::tick);
     }
 }

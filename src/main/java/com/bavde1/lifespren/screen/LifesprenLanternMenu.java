@@ -1,7 +1,7 @@
 package com.bavde1.lifespren.screen;
 
 import com.bavde1.lifespren.block.ModBlocks;
-import com.bavde1.lifespren.block.entity.LifesprenLanternBLockEntity;
+import com.bavde1.lifespren.block.entity.LifesprenLanternBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -11,10 +11,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-import org.jetbrains.annotations.Nullable;
 
 public class LifesprenLanternMenu extends AbstractContainerMenu {
-    public final LifesprenLanternBLockEntity blockEntity;
+    public final LifesprenLanternBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
 
@@ -25,7 +24,7 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
     public LifesprenLanternMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.LIFESPREN_LANTERN_MENU.get(), id);
         checkContainerSize(inv, 2); //pMinSize must equal itemHandler size
-        blockEntity = (LifesprenLanternBLockEntity) entity;
+        blockEntity = (LifesprenLanternBlockEntity) entity;
         this.level = inv.player.level;
         this.data = data;
 

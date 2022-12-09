@@ -1,28 +1,23 @@
 package com.bavde1.lifespren.entity.client;
 
 import com.bavde1.lifespren.LifesprenMod;
-import com.bavde1.lifespren.entity.ModEntityTypes;
+import com.bavde1.lifespren.entity.client.trail.LifesprenTrailManager;
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
 import com.bavde1.lifespren.particle.ModParticles;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib3.core.util.Color;
-import software.bernie.geckolib3.geo.render.built.GeoBone;
-import software.bernie.geckolib3.geo.render.built.GeoModel;
 import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
+
+import java.util.ArrayList;
 
 public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     ResourceLocation texture = new ResourceLocation(LifesprenMod.MOD_ID, "textures/entity/lifespren_mob_texture.png");
+    private static final ArrayList<BlockPos> previousPositions = new ArrayList<>();
 
     public LifesprenRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new LifesprenModel());
@@ -42,6 +37,47 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     @Override
     public void render(LifesprenEntity entity, float entityYaw, float partialTicks, PoseStack stack, MultiBufferSource bufferIn, int packedLightIn) {
         super.render(entity, entityYaw, partialTicks, stack, bufferIn, packedLightIn);
+
+        //render here
+        LifesprenTrailManager.renderTrail(entity, entity.getX(), entity.getY(), entity.getZ(), partialTicks);
+
+/*
+        previousPositions.add(entity.getOnPos());
+        while (previousPositions.size() > 25) {
+            previousPositions.remove(0);
+        }
+        if (previousPositions.isEmpty()) {
+            return;
+        }
+        final Minecraft minecraft = Minecraft.getInstance();
+
+        final float d0 = (float) (entity.xOld + ((entity.getX() - entity.xOld) * partialTicks));
+        final float d1 = (float) (entity.yOld + ((entity.getY() - entity.yOld) * partialTicks));
+        final float d2 = (float) (entity.zOld + ((entity.getZ() - entity.zOld) * partialTicks));
+
+        final Tesselator tesselator = Tesselator.getInstance();
+        final BufferBuilder bufferBuilder = tesselator.getBuilder();
+
+        // Transform to BlockPos (0, 0, 0)
+        bufferBuilder.setQuadSortOrigin(-d0, -d1, -d2);
+
+        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+
+        final GameRenderer renderDispatcher = minecraft.gameRenderer;
+        final BlockState state = Blocks.IRON_ORE.defaultBlockState();
+
+
+        for (final BlockPos previousPosition : previousPositions) {
+            // Render the block with the dispatcher
+            renderDispatcher.blitShader.TEXTURE_MATRIX.(state, previousPosition, BlockAndTintGetter, stack, bufferBuilder, true, RandomSource.create());
+            //blockRendererDispatcher.renderSingleBlock(state, stack, bufferIn, packedLightIn, OverlayTexture.NO_OVERLAY);
+        }
+
+        // Draw with the tessellator, not the bufferBuilder
+        tesselator.end();
+
+        // Reset translation
+        bufferBuilder.setQuadSortOrigin(0, 0, 0);*/
     }
 
     @Override
