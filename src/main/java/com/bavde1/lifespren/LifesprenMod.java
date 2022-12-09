@@ -1,12 +1,16 @@
 package com.bavde1.lifespren;
 
 import com.bavde1.lifespren.block.ModBlocks;
+import com.bavde1.lifespren.block.entity.ModBlockEntities;
 import com.bavde1.lifespren.entity.ModEntityTypes;
 import com.bavde1.lifespren.entity.client.LifesprenRenderer;
 import com.bavde1.lifespren.item.ModItems;
 import com.bavde1.lifespren.particle.ModParticles;
+import com.bavde1.lifespren.screen.LifesprenLanternScreen;
+import com.bavde1.lifespren.screen.ModMenuTypes;
 import com.bavde1.lifespren.sound.ModSounds;
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -37,7 +41,10 @@ public class LifesprenMod {
         GeckoLib.initialize();
 
         ModBlocks.register(eventBus);
+        ModBlockEntities.register(eventBus);
         ModItems.register(eventBus);
+
+        ModMenuTypes.register(eventBus);
 
         // Register the commonSetup method for modloading
         eventBus.addListener(this::commonSetup);
@@ -60,6 +67,8 @@ public class LifesprenMod {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.cutout());
             //render entities
             EntityRenderers.register(ModEntityTypes.LIFESPREN_MOB.get(), LifesprenRenderer::new);
+
+            MenuScreens.register(ModMenuTypes.LIFESPREN_LANTERN_MENU.get(), LifesprenLanternScreen::new);
         }
     }
 }

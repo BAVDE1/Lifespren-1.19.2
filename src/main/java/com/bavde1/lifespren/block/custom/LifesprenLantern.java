@@ -1,5 +1,7 @@
 package com.bavde1.lifespren.block.custom;
 
+import com.bavde1.lifespren.block.entity.LifesprenLanternBLockEntity;
+import com.bavde1.lifespren.block.entity.ModBlockEntities;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.util.LanternUtil;
 import com.bavde1.lifespren.util.ModTags;
@@ -7,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -18,10 +21,10 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.BonemealableBlock;
-import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -35,16 +38,17 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
 /* todo:
-    Make block entity - use tags to fix drawing, line progress
+    Make block entity - use tags to fix drawing
     block gui for augments
  */
 
-public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
+public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterloggedBlock {
     public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
@@ -92,9 +96,20 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
      */
 
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!drawing && !level.isClientSide) {
-            activate(level, pos);
-        }
+            if (!player.isCrouching()) {
+                if (!level.isClientSide) {
+                    BlockEntity blockEntity = level.getBlockEntity(pos);
+                    if (blockEntity instanceof LifesprenLanternBLockEntity) {
+                        NetworkHooks.openScreen(((ServerPlayer) player), (LifesprenLanternBLockEntity) blockEntity, pos);
+                    } else {
+                        throw new IllegalStateException("Our Container provider is missing!");
+                    }
+                }
+            } else {
+                if (!drawing && !level.isClientSide) {
+                    activate(level, pos);
+                }
+            }
         return InteractionResult.SUCCESS;
     }
 
@@ -102,8 +117,8 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
      * Must be called on server side
      */
     public void activate(Level level, BlockPos pos) {
-        int hRange = 7; //horizontal range
-        int vRange = 7; //vertical range
+        int hRange = 6; //horizontal range
+        int vRange = 3; //vertical range
 
         // detect & filter nearby blocks
         ArrayList<BlockPos> validBlockPos = new ArrayList<>();
@@ -212,7 +227,7 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
     }
 
     /**
-     * Default lantern block stuff
+     * Block Shape
      */
 
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
@@ -249,5 +264,37 @@ public class LifesprenLantern extends Block implements SimpleWaterloggedBlock {
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
         pBuilder.add(WATERLOGGED, HANGING);
+    }
+
+    /**
+     * Block Entity
+     */
+
+    @Override
+    public RenderShape getRenderShape(BlockState pState) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (state.getBlock() != newState.getBlock()) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof LifesprenLanternBLockEntity) {
+                ((LifesprenLanternBLockEntity) blockEntity).drops();
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new LifesprenLanternBLockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), LifesprenLanternBLockEntity::tick);
     }
 }
