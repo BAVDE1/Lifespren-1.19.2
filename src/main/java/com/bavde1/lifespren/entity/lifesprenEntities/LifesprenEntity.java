@@ -1,5 +1,7 @@
 package com.bavde1.lifespren.entity.lifesprenEntities;
 
+import com.bavde1.lifespren.entity.client.trail.LifesprenTrailManager;
+import com.bavde1.lifespren.entity.client.trail.TrailTest;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.sound.ModSounds;
 import com.bavde1.lifespren.util.ModTags;
@@ -62,12 +64,13 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable {
 
     public void tick() {
         //entity fly vertically
-        this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.5D, 1.0D));
+        this.setDeltaMovement(this.getDeltaMovement().multiply(0.95D, 0.5D, 0.95D));
         //despawn entity
         int minAliveSec = 15;
         if (this.tickCount >= ((minAliveSec * 20) + (Math.random() * 4000))) {
             despawnLifespren();
         }
+        //TrailTest.onTick(this);
         super.tick();
     }
 
@@ -97,9 +100,8 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable {
             //selection of target pos
             if (!validBlockPos.isEmpty() && Math.random() < 0.85) { //85%
                 //specific target pos
-                BlockPos targetPos = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
-                targetPos.offset(Math.random(), 0.7 + (Math.random() * 4), Math.random());
-                this.targetPosition = targetPos;
+                //targetPos.offset(Math.random(), 0.7 + (Math.random() * 4), Math.random());
+                this.targetPosition = validBlockPos.get((int) Math.floor(Math.random() * validBlockPos.size()));
             } else {
                 //random target pos
                 int range = 7;
@@ -112,9 +114,9 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable {
         }
 
         //movement to target pos
-        double dX = (double) this.targetPosition.getX() + 0.5D - this.getX();
-        double dY = (double) this.targetPosition.getY() + 0.1D - this.getY();
-        double dZ = (double) this.targetPosition.getZ() + 0.5D - this.getZ();
+        double dX = (double) this.targetPosition.getX() + Math.random() - this.getX();
+        double dY = (double) this.targetPosition.getY() + (0.3 + Math.random()) - this.getY();
+        double dZ = (double) this.targetPosition.getZ() + Math.random() - this.getZ();
         Vec3 vec3 = this.getDeltaMovement();
         double div = 2.8;
         double pX = ((Math.signum(dX) * 0.5D - vec3.x) * (double) 0.1F) / div;
@@ -133,12 +135,12 @@ public class LifesprenEntity extends AmbientCreature implements IAnimatable {
     }
 
     private void despawnLifespren() {
+        //sound
+        if (!this.isSilent()) {
+            this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.5F + 1F, false);
+        }
         if (!this.level.isClientSide) {
-            //sound
-            if (Minecraft.getInstance().level != null) {
-                Minecraft.getInstance().level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.NEUTRAL, 1.0F, 1.0F, false);
-            }
-            //particle explosion
+            //small particle explosion
             for (int i = 0; i < 10; ++i) {
                 int div = 7;
                 double sX = (this.random.nextFloat() * 2.0F - 1.0F) / div;

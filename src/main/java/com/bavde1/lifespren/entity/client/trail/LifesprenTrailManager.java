@@ -1,6 +1,8 @@
+
 package com.bavde1.lifespren.entity.client.trail;
 
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.util.HashMap;
 
@@ -25,17 +27,17 @@ public class LifesprenTrailManager {
         return trail;
     }
 
-    public static void renderTrail(LifesprenEntity entity, double x, double y, double z, float partialTicks) {
-        getOrMake(entity).render(x, y, z, partialTicks);
+    public static void renderTrail(LifesprenEntity entity, double x, double y, double z, float partialTicks, PoseStack stack) {
+        getOrMake(entity).render(x, y, z, partialTicks, stack);
     }
 
     public static void cleanup() {
         trailMap.entrySet().removeIf(e -> e.getValue().shouldBeRemoved());
     }
 
-    public static void onRenderTick() {
+    public static void onRenderTick(float partialTicks) {
         for (final LifesprenTail trail : trailMap.values()) {
-            trail.onRenderTick();
+            trail.onRenderTick(partialTicks);
         }
 
         cleanup();

@@ -1,9 +1,9 @@
 package com.bavde1.lifespren.entity.client;
 
 import com.bavde1.lifespren.LifesprenMod;
-import com.bavde1.lifespren.entity.client.trail.LifesprenTrailManager;
+import com.bavde1.lifespren.entity.client.trail.TrailTest;
+import com.bavde1.lifespren.entity.client.trail.TrailTestManager;
 import com.bavde1.lifespren.entity.lifesprenEntities.LifesprenEntity;
-import com.bavde1.lifespren.particle.ModParticles;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -35,49 +35,11 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
     }
 
     @Override
-    public void render(LifesprenEntity entity, float entityYaw, float partialTicks, PoseStack stack, MultiBufferSource bufferIn, int packedLightIn) {
-        super.render(entity, entityYaw, partialTicks, stack, bufferIn, packedLightIn);
+    public void render(LifesprenEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferIn, int packedLightIn) {
+        super.render(entity, entityYaw, partialTicks, poseStack, bufferIn, packedLightIn);
 
+        //LifesprenTrailManager.renderTrail(entity, entity.getX(), entity.getY(), entity.getZ(), partialTicks, poseStack);
         //render here
-        LifesprenTrailManager.renderTrail(entity, entity.getX(), entity.getY(), entity.getZ(), partialTicks);
-
-/*
-        previousPositions.add(entity.getOnPos());
-        while (previousPositions.size() > 25) {
-            previousPositions.remove(0);
-        }
-        if (previousPositions.isEmpty()) {
-            return;
-        }
-        final Minecraft minecraft = Minecraft.getInstance();
-
-        final float d0 = (float) (entity.xOld + ((entity.getX() - entity.xOld) * partialTicks));
-        final float d1 = (float) (entity.yOld + ((entity.getY() - entity.yOld) * partialTicks));
-        final float d2 = (float) (entity.zOld + ((entity.getZ() - entity.zOld) * partialTicks));
-
-        final Tesselator tesselator = Tesselator.getInstance();
-        final BufferBuilder bufferBuilder = tesselator.getBuilder();
-
-        // Transform to BlockPos (0, 0, 0)
-        bufferBuilder.setQuadSortOrigin(-d0, -d1, -d2);
-
-        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
-
-        final GameRenderer renderDispatcher = minecraft.gameRenderer;
-        final BlockState state = Blocks.IRON_ORE.defaultBlockState();
-
-
-        for (final BlockPos previousPosition : previousPositions) {
-            // Render the block with the dispatcher
-            renderDispatcher.blitShader.TEXTURE_MATRIX.(state, previousPosition, BlockAndTintGetter, stack, bufferBuilder, true, RandomSource.create());
-            //blockRendererDispatcher.renderSingleBlock(state, stack, bufferIn, packedLightIn, OverlayTexture.NO_OVERLAY);
-        }
-
-        // Draw with the tessellator, not the bufferBuilder
-        tesselator.end();
-
-        // Reset translation
-        bufferBuilder.setQuadSortOrigin(0, 0, 0);*/
     }
 
     @Override
@@ -85,10 +47,11 @@ public class LifesprenRenderer extends GeoEntityRenderer<LifesprenEntity> {
                                     @Nullable MultiBufferSource renderTypeBuffer,
                                     @Nullable VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
         //scale entity to half model size
-        poseStack.scale(0.45F, 0.45F, 0.45F);
+        poseStack.scale(0.5F, 0.5F, 0.5F);
         //spawn particle trail here so is in sync with entity position
         if (entity.level.isClientSide) {
-            entity.level.addParticle(ModParticles.TRAIL_PARTICLE.get(), entity.getX() + 0.005, entity.getY() + 0.08, entity.getZ(), 0, 0, 0);
+            TrailTestManager.renderTrail(entity);
+            //entity.level.addParticle(ModParticles.TRAIL_PARTICLE.get(), entity.getX() + 0.005, entity.getY() + 0.08, entity.getZ(), 0, 0, 0);
         }
 
         //return super.getRenderType(entity, partialTicks, poseStack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
