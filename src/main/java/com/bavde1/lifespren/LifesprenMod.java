@@ -35,7 +35,6 @@ public class LifesprenMod {
         ModEntityTypes.register(eventBus);
 
         ModSounds.register(eventBus);
-
         ModParticles.register(eventBus);
 
         GeckoLib.initialize();
@@ -53,7 +52,6 @@ public class LifesprenMod {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    // for common setup
     private void commonSetup(final FMLCommonSetupEvent event) {
 
     }
@@ -64,7 +62,7 @@ public class LifesprenMod {
         // for client setup
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.cutout());
+            //ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIFESPREN_LANTERN.get(), RenderType.cutout());
             //render entities
             EntityRenderers.register(ModEntityTypes.LIFESPREN_MOB.get(), LifesprenRenderer::new);
 
