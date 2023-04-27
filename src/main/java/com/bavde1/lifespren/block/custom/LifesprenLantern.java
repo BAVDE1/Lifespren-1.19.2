@@ -45,30 +45,25 @@ import org.jetbrains.annotations.Nullable;
  */
 
 public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterloggedBlock {
-    public static final BooleanProperty ON_COOLDOWN = BooleanProperty.create("on_cooldown");
-
     public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
     protected static final VoxelShape AABB_HANGING = Shapes.or(Block.box(5.0D, 4.0D, 5.0D, 11.0D, 12.0D, 11.0D), Block.box(6.0D, 12.0D, 6.0D, 10.0D, 14.0D, 10.0D));
 
-    public static BlockPos targetPos;
-    public static boolean drawing;
-    public static double lineProgress;
-
     public LifesprenLantern(Properties pProperties) {
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(HANGING, Boolean.FALSE)
-                .setValue(WATERLOGGED, Boolean.FALSE)
-                .setValue(ON_COOLDOWN, Boolean.FALSE));
+                .setValue(WATERLOGGED, Boolean.FALSE));
     }
 
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        //initialise / reset data
-        drawing = false;
-        targetPos = null;
-        lineProgress = 0;
+        if (!level.isClientSide) {
+            LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
+            if (blockEntity != null) {
+                blockEntity.onPlace();
+            }
+        }
     }
 
     @Nullable
@@ -86,12 +81,6 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
         return null;
     }
 
-    /**
-     * RANGE EXAMPLE:
-     * range=3    B=block
-     * |❌| |✔| |✔| |✔| |B| |✔| |✔| |✔| |❌|
-     */
-
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
             if (!player.isCrouching()) {
                 if (!level.isClientSide) {
@@ -103,12 +92,11 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
                     }
                 }
             } else {
-                if (!drawing && !level.isClientSide) {
+                if (!level.isClientSide) {
                     LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
                     if (blockEntity != null) {
                         blockEntity.activate(level, pos, blockEntity);
                     }
-                    //activate(level, pos);
                 }
             }
         return InteractionResult.SUCCESS;
@@ -117,92 +105,9 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     /**
      * Must be called on server side
      */
-    /*public void activate(Level level, BlockPos pos) {
-        int hRange = 6; //horizontal range
-        int vRange = 3; //vertical range
-
-        // detect & filter nearby blocks
-        ArrayList<BlockPos> validBlockPos = new ArrayList<>();
-
-        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
-            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
-            //if block is bonemeal-able add to list
-            if (LanternUtil.isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
-                validBlockPos.add(currentBlockPos.immutable());
-            }
-        }
-
-        // tick block if can
-        if (!validBlockPos.isEmpty()) {
-            drawing = true;
-            //selects random item from list
-            targetPos = LanternUtil.getRandomBlockPosFromArray(validBlockPos);
-            level.scheduleTick(pos, this, 0);
-        }
-    }*/
-
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource randomSource) {
-        if (drawing) {
-            drawLine(state, pos, level, randomSource);
-        }
-    }
 
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource randomSource) {
-        if (!drawing) {
-            spawnFlameParticle(level, state, pos, randomSource);
-        }
-    }
-
-    private void drawLine(BlockState state, BlockPos pos, ServerLevel level, RandomSource randomSource) {
-        // vector of pos, targetPos
-        Vec3 v3 = LanternUtil.getVecFrom2BlockPos(pos, targetPos);
-
-        double div = LanternUtil.getVecScalarForStraightLine(v3);
-        lineProgress = lineProgress == 0 ? div : div * (lineProgress / div);
-        double i = lineProgress;
-
-        Vec3 vLine = LanternUtil.getNewVecForStraightLine(v3, i);
-        spawnLineParticle(vLine, state, pos);
-        lineProgress = lineProgress + div;
-
-        if (i >= 1) {
-            drawing = false;
-            lineProgress = 0;
-            performBonemealOnTargetBlock(level, randomSource);
-        } else {
-            level.scheduleTick(pos, this, 1);
-        }
-    }
-
-    private void performBonemealOnTargetBlock(ServerLevel level, RandomSource randomSource) {
-        Block targetBlock = LanternUtil.getBlockAtPos(level, targetPos);
-
-        if (LanternUtil.isValidBonemealableBlock(level, targetPos, targetBlock, level.getBlockState(targetPos), false)) {
-            ((BonemealableBlock) targetBlock).performBonemeal(level, randomSource, targetPos, level.getBlockState(targetPos));
-            spawnGrowthParticle(targetPos);
-        }
-    }
-
-    public void spawnLineParticle(Vec3 vec3, BlockState state, BlockPos pos) {
-        double x = pos.getX() + vec3.x + 0.5;
-        double y = pos.getY() + vec3.y + getParticleOffset(state);
-        double z = pos.getZ() + vec3.z + 0.5;
-
-        if (Minecraft.getInstance().level != null) {
-            Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_LINE_PARTICLE.get(), x, y, z, 0, 0, 0);
-        }
-    }
-
-    public void spawnGrowthParticle(BlockPos pos) {
-        for (int i = 0; i < 16; ++i) {
-            double pX = pos.getX() + Math.random();
-            double pY = pos.getY() + Math.random();
-            double pZ = pos.getZ() + Math.random();
-
-            if (Minecraft.getInstance().level != null) {
-                Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_LINE_PARTICLE.get(), pX, pY, pZ, 0, 0, 0);
-            }
-        }
+        spawnFlameParticle(level, state, pos, randomSource);
     }
 
     public void spawnFlameParticle(Level level, BlockState state, BlockPos pos, RandomSource random) {
@@ -258,7 +163,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     }
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(WATERLOGGED, HANGING, ON_COOLDOWN);
+        pBuilder.add(WATERLOGGED, HANGING);
     }
 
     @Override
@@ -299,7 +204,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        //if (getBlockEntity(level, ))
-        return createTickerHelper(type, ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), LifesprenLanternBlockEntity::tick);
+        //MUST be called on server side
+        return !level.isClientSide ? createTickerHelper(type, ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), LifesprenLanternBlockEntity::tick) : null;
     }
 }
