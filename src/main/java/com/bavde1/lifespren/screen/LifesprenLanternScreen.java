@@ -1,18 +1,13 @@
 package com.bavde1.lifespren.screen;
 
 import com.bavde1.lifespren.LifesprenMod;
-import com.bavde1.lifespren.util.ModTags;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLanternMenu> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(LifesprenMod.MOD_ID, "textures/gui/lifespren_lantern_gui_default.png");
@@ -48,9 +43,25 @@ public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLan
         super.renderTooltip(poseStack, mX, mY);
         int x = mX - ((width - this.imageWidth) / 2);
         int y = mY - ((height - this.imageHeight) / 2);
-        if (x > 10 && x < 46) {
-            if (y > 22 && y < 58) {
-                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Grows nearby crops"), mX, mY);
+
+        //crop
+        if (x > 9 && x < 45 && y > 21 && y < 57) {
+            LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Grows nearby crops"), mX, mY);
+        }
+
+        //icons
+        if (this.menu.hasRedstone()) {
+            if (x > 115 && x < 123 && y > 35 && y < 43) {
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Nearby target-able blocks"), mX, mY);
+            }
+            if (x > 112 && x < 126 && y > 50 && y < 58) {
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Range (blocks)"), mX, mY);
+            }
+            if (x > 113 && x < 125 && y > 65 && y < 77) {
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Cooldown (secs)"), mX, mY);
+            }
+            if (x > 113 && x < 125 && y > 84 && y < 96) {
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Special chance (%)"), mX, mY);
             }
         }
     }
@@ -63,28 +74,41 @@ public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLan
 
         Component countComponent = null;
         Component hRangeComponent = null;
-        Component vRangeComponent = null;
-        if (this.menu.getSlot(0).hasItem()) {
-            if (this.menu.slots.get(0).getItem().is(Items.REDSTONE)) {
-                int count = this.menu.getNearbyCropsCount();
-                countComponent = Component.translatable("Nearby: " + count);
+        Component cooldownComponent = null;
+        Component specialComponent = null;
+        if (this.menu.hasRedstone()) {
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.setShaderTexture(0, TEXTURE);
 
-                int hRange = this.menu.getHRange();
-                hRangeComponent = Component.translatable("↔ Range: " + hRange);
+            //icons
+            this.blit(poseStack, 114, 9, imageWidth, 0, 11, 58); //x115, y38
 
-                int vRange = this.menu.getVRange();
-                vRangeComponent = Component.translatable("↕ Range: " + vRange);
-            }
+            //changeable values
+            int count = this.menu.getNearbyCropsCount();
+            countComponent = Component.translatable("- " + count);
+
+            int hRange = this.menu.getHRange();
+            hRangeComponent = Component.translatable("- " + hRange);
+
+            cooldownComponent = Component.translatable("- 40");
+
+            specialComponent = Component.translatable("- 8");
         }
 
+        int x = 130;
+        int colour = 1325400064;
         if (countComponent != null) {
-            this.font.draw(poseStack, countComponent, 115, -8, 1325400064);
+            this.font.draw(poseStack, countComponent, x, 8, colour);
         }
         if (hRangeComponent != null) {
-            this.font.draw(poseStack, hRangeComponent, 115, 2, 1325400064);
+            this.font.draw(poseStack, hRangeComponent, x, 23, colour);
         }
-        if (vRangeComponent != null) {
-            this.font.draw(poseStack, vRangeComponent, 115, 12, 1325400064);
+        if (cooldownComponent != null) {
+            this.font.draw(poseStack, cooldownComponent, x, 40, colour);
+        }
+        if (specialComponent != null) {
+            this.font.draw(poseStack, specialComponent, x, 59, colour);
         }
     }
 

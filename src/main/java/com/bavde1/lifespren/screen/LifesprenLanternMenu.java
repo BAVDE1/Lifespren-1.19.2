@@ -28,9 +28,9 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
     public LifesprenLanternMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.LIFESPREN_LANTERN_MENU.get(), id);
         checkContainerSize(inv, 2); //pMinSize must equal itemHandler size
+        //checkContainerDataCount(data, 2);
         blockEntity = (LifesprenLanternBlockEntity) entity;
         this.level = inv.player.level;
-        checkContainerDataCount(data, 2);
         this.data = data;
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
@@ -38,7 +38,7 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
             this.addSlot(new SlotItemHandler(handler, 1, 80, 56)); //upgrade
         });
 
-        addDataSlots(data);
+        this.addDataSlots(data);
 
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
@@ -58,7 +58,14 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
     }
 
     public int getVRange() {
-        return this.data.get(2);
+        return this.data.get(1);
+    }
+
+    public boolean hasRedstone() {
+        if (this.slots.get(0).hasItem()) {
+            return this.slots.get(0).getItem().is(Items.REDSTONE);
+        }
+        return false;
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

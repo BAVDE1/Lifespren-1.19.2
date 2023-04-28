@@ -35,9 +35,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProvider {
+    public int nearbyValidBlockCount = 0;
     public int hRange = 6; //horizontal range
     public int vRange = 3; //vertical range
-    public int nearbyValidBlockCount;
     public BlockPos targetPos;
     public double lineProgress;
 
