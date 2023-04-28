@@ -87,7 +87,7 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public Component getDisplayName() {
-        return Component.literal("Lifespren lantern");
+        return Component.translatable("block.lifespren.lifespren_lantern.display_name");
     }
 
     @Nullable
@@ -129,7 +129,7 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
     }
 
     /**
-     * Called in LifesprenLantern when block is broken to drop its inventory
+     * Called when block is broken to drop its inventory
      */
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());

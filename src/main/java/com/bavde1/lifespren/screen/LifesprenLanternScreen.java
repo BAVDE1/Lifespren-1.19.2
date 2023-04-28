@@ -46,22 +46,22 @@ public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLan
 
         //crop
         if (x > 9 && x < 45 && y > 21 && y < 57) {
-            LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Grows nearby crops"), mX, mY);
+            LifesprenLanternScreen.this.renderTooltip(poseStack, Component.translatable("screen.lifespren.lifespren_lantern.crops_tooltip"), mX, mY);
         }
 
         //icons
         if (this.menu.hasRedstone()) {
             if (x > 115 && x < 123 && y > 35 && y < 43) {
-                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Nearby target-able blocks"), mX, mY);
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.translatable("screen.lifespren.lifespren_lantern.nearby_blocks_tooltip"), mX, mY);
             }
             if (x > 112 && x < 126 && y > 50 && y < 58) {
-                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Range (blocks)"), mX, mY);
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.translatable("screen.lifespren.lifespren_lantern.range_tooltip"), mX, mY);
             }
             if (x > 113 && x < 125 && y > 65 && y < 77) {
-                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Cooldown (secs)"), mX, mY);
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.translatable("screen.lifespren.lifespren_lantern.cooldown_tooltip"), mX, mY);
             }
             if (x > 113 && x < 125 && y > 84 && y < 96) {
-                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.literal("Special chance (%)"), mX, mY);
+                LifesprenLanternScreen.this.renderTooltip(poseStack, Component.translatable("screen.lifespren.lifespren_lantern.special_chance_tooltip"), mX, mY);
             }
         }
     }
@@ -82,7 +82,7 @@ public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLan
             RenderSystem.setShaderTexture(0, TEXTURE);
 
             //icons
-            this.blit(poseStack, 114, 9, imageWidth, 0, 11, 58); //x115, y38
+            this.blit(poseStack, 114, 9, imageWidth, 0, 11, 58);
 
             //changeable values
             int count = this.menu.getNearbyCropsCount();
@@ -91,9 +91,9 @@ public class LifesprenLanternScreen extends AbstractContainerScreen<LifesprenLan
             int hRange = this.menu.getHRange();
             hRangeComponent = Component.translatable("- " + hRange);
 
-            cooldownComponent = Component.translatable("- 40");
+            cooldownComponent = Component.translatable("- ");
 
-            specialComponent = Component.translatable("- 8");
+            specialComponent = Component.translatable("- ");
         }
 
         int x = 130;

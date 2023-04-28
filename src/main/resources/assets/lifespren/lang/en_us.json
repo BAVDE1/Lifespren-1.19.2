@@ -1,4 +1,12 @@
 {
   "sounds.lifespren.lifespren_chimes": "Lifespren Chimes",
-  "block.lifespren.lifespren_lantern": "Lifespren Lantern"
+  "block.lifespren.lifespren_lantern": "Lifespren Lantern",
+
+  "block.lifespren.lifespren_lantern.display_name": "Lifespren lantern",
+
+  "screen.lifespren.lifespren_lantern.crops_tooltip": "Grows nearby crops",
+  "screen.lifespren.lifespren_lantern.nearby_blocks_tooltip": "Nearby target-able blocks",
+  "screen.lifespren.lifespren_lantern.range_tooltip": "Range (blocks)",
+  "screen.lifespren.lifespren_lantern.cooldown_tooltip": "Cooldown (secs)",
+  "screen.lifespren.lifespren_lantern.special_chance_tooltip": "Special chance (%)"
 }

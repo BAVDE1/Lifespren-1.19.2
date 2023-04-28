@@ -22,12 +22,12 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public LifesprenLanternMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level.getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(2)); //pSize must equal getCount
+        this(id, inv, inv.player.level.getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(3)); //pSize must equal getCount
     }
 
     public LifesprenLanternMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.LIFESPREN_LANTERN_MENU.get(), id);
-        checkContainerSize(inv, 2); //pMinSize must equal itemHandler size
+        checkContainerSize(inv, 2); //minSize must equal itemHandler size
         //checkContainerDataCount(data, 2);
         blockEntity = (LifesprenLanternBlockEntity) entity;
         this.level = inv.player.level;
@@ -54,10 +54,6 @@ public class LifesprenLanternMenu extends AbstractContainerMenu {
     }
 
     public int getHRange() {
-        return this.data.get(1);
-    }
-
-    public int getVRange() {
         return this.data.get(1);
     }
 
