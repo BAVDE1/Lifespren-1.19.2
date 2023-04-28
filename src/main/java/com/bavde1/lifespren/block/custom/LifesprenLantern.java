@@ -45,6 +45,8 @@ import org.jetbrains.annotations.Nullable;
  */
 
 public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterloggedBlock {
+    public static final BooleanProperty DRAWING = BooleanProperty.create("drawing");
+
     public static final BooleanProperty HANGING = BlockStateProperties.HANGING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     protected static final VoxelShape AABB = Shapes.or(Block.box(5.0D, 0.0D, 5.0D, 11.0D, 8.0D, 11.0D), Block.box(6.0D, 8.0D, 6.0D, 10.0D, 10.0D, 10.0D));
@@ -54,7 +56,8 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(HANGING, Boolean.FALSE)
-                .setValue(WATERLOGGED, Boolean.FALSE));
+                .setValue(WATERLOGGED, Boolean.FALSE)
+                .setValue(DRAWING, Boolean.FALSE));
     }
 
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -95,7 +98,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
                 if (!level.isClientSide) {
                     LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
                     if (blockEntity != null) {
-                        blockEntity.activate(level, pos, blockEntity);
+                        blockEntity.activate(level, pos, blockEntity, state);
                     }
                 }
             }
@@ -107,7 +110,9 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
      */
 
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource randomSource) {
-        spawnFlameParticle(level, state, pos, randomSource);
+        if (!state.getValue(LifesprenLantern.DRAWING)) {
+            spawnFlameParticle(level, state, pos, randomSource);
+        }
     }
 
     public void spawnFlameParticle(Level level, BlockState state, BlockPos pos, RandomSource random) {
@@ -163,7 +168,7 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
     }
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(WATERLOGGED, HANGING);
+        pBuilder.add(WATERLOGGED, HANGING, DRAWING);
     }
 
     @Override

@@ -14,9 +14,9 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> LIFESPREN_CHIMES = registerSoundEvent("lifespren_chimes");
 
-
     private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
-        return SOUND_EVENTS.register(name, () -> new SoundEvent(new ResourceLocation(LifesprenMod.MOD_ID, name)));
+        ResourceLocation id = new ResourceLocation(LifesprenMod.MOD_ID, name);
+        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(id));
     }
 
     public static void register(IEventBus eventBus) {

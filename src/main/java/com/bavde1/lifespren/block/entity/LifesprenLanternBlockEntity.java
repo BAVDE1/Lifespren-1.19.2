@@ -1,5 +1,6 @@
 package com.bavde1.lifespren.block.entity;
 
+import com.bavde1.lifespren.block.custom.LifesprenLantern;
 import com.bavde1.lifespren.particle.ModParticles;
 import com.bavde1.lifespren.screen.LifesprenLanternMenu;
 import com.bavde1.lifespren.util.LanternUtil;
@@ -34,11 +35,13 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 
 public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProvider {
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    protected final ContainerData data;
-    public boolean drawing;
+    public int hRange = 6; //horizontal range
+    public int vRange = 3; //vertical range
+    public int nearbyValidBlockCount;
     public BlockPos targetPos;
     public double lineProgress;
+
+    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -46,27 +49,38 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
         }
     };
 
+    protected final ContainerData data = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> LifesprenLanternBlockEntity.this.nearbyValidBlockCount;
+                case 1 -> LifesprenLanternBlockEntity.this.hRange;
+                case 2 -> LifesprenLanternBlockEntity.this.vRange;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            switch (index) {
+                case 0 -> LifesprenLanternBlockEntity.this.nearbyValidBlockCount = value;
+                case 1 -> LifesprenLanternBlockEntity.this.hRange = value;
+                case 2 -> LifesprenLanternBlockEntity.this.vRange = value;
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 3; //size of data array ?
+        }
+    };
+
     public LifesprenLanternBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.LIFESPREN_LANTERN_BLOCK_ENTITY.get(), pos, blockState);
-        this.data = new ContainerData() {
-            @Override
-            public int get(int index) {
-                return index;
-            }
-            @Override
-            public void set(int index, int value) {
-            }
-            @Override
-            public int getCount() {
-                return 2; // size
-            }
-        };
     }
 
-    //called in block class when block is placed
     public void onPlace() {
         //initialise / reset data
-        drawing = false;
         targetPos = null;
         lineProgress = 0;
     }
@@ -132,58 +146,78 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
      * <br><br>
      * Must be called on server side (called in block class)
      * <br><br>
-     * HORIZONTAL RANGE EXAMPLE: <br>
-     * hRange=3    B=block <br>
+     * RANGE EXAMPLE: <br>
+     * range=3    B=block <br>
      * |❌| |✔| |✔| |✔| |B| |✔| |✔| |✔| |❌|
      */
-    public void activate(Level level, BlockPos pos, LifesprenLanternBlockEntity blockEntity) {
-        if (!drawing) {
-            int hRange = 6; //horizontal range
-            int vRange = 3; //vertical range
+    public void activate(Level level, BlockPos pos, LifesprenLanternBlockEntity blockEntity, BlockState state) {
+        if (!isDrawing(state)) {
+            ArrayList<BlockPos> validBlockPos = getNearbyValidBlocks(level, pos, hRange, vRange, true);
 
-            // detect & filter nearby blocks
-            ArrayList<BlockPos> validBlockPos = new ArrayList<>();
-            for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
-                Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
-                //if block is bonemeal-able add to list
-                if (LanternUtil.isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
-                    validBlockPos.add(currentBlockPos.immutable());
-                }
-            }
-
-            // tick block if can
+            //if can, set drawing & block
             if (!validBlockPos.isEmpty()) {
-                drawing = true;
+                setDrawingBlockState(level, pos, state, blockEntity, Boolean.TRUE);
                 //selects random item from list
-                targetPos = LanternUtil.getRandomBlockPosFromArray(validBlockPos);
+                blockEntity.targetPos = LanternUtil.getRandomBlockPosFromArray(validBlockPos);
             }
         }
     }
 
-    public static void tick(Level level, BlockPos blockPos, BlockState state, LifesprenLanternBlockEntity blockEntity) {
-        if (blockEntity.drawing) {
-            drawLine(state, blockPos, (ServerLevel) level, RandomSource.create(), blockEntity);
+    // detect & filter nearby blocks
+    public static ArrayList<BlockPos> getNearbyValidBlocks(Level level, BlockPos pos, int hRange, int vRange, boolean needCurrentlyBonemealable) {
+        ArrayList<BlockPos> validBlockPos = new ArrayList<>();
+        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
+            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
+
+            if (needCurrentlyBonemealable) {
+                //if block is CURRENTLY bonemeal-able, add to list
+                if (LanternUtil.isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
+                    validBlockPos.add(currentBlockPos.immutable());
+                }
+            } else {
+                //if block is bonemealable at SOME stage of its age, add to list
+                if (LanternUtil.isValidGrowableBlock(currentBlock, level.getBlockState(currentBlockPos))) {
+                    validBlockPos.add(currentBlockPos.immutable());
+                }
+            }
+        }
+
+        return  validBlockPos;
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, LifesprenLanternBlockEntity blockEntity) {
+        if (pos != null) {
+            if (blockEntity.isDrawing(state)) {
+                drawLine(state, pos, (ServerLevel) level, RandomSource.create(), blockEntity);
+            }
+
+            //counts nearby growable crops & adds to data
+            ArrayList<BlockPos> validBlockPos = getNearbyValidBlocks(level, pos, blockEntity.hRange, blockEntity.vRange, false);
+            blockEntity.nearbyValidBlockCount = validBlockPos.size();
         }
     }
 
     private static void drawLine(BlockState state, BlockPos pos, ServerLevel level, RandomSource randomSource, LifesprenLanternBlockEntity blockEntity) {
-        // vector of pos, targetPos
-        Vec3 v3 = LanternUtil.getVecFrom2BlockPos(pos, blockEntity.targetPos);
+        if (blockEntity.targetPos != null) {
+            // vector of pos, targetPos
+            Vec3 v3 = LanternUtil.getVecFrom2BlockPos(pos, blockEntity.targetPos);
 
-        double div = LanternUtil.getVecScalarForStraightLine(v3);
-        blockEntity.lineProgress = blockEntity.lineProgress == 0 ? div : div * (blockEntity.lineProgress / div);
-        double i = blockEntity.lineProgress;
+            double div = LanternUtil.getVecScalarForStraightLine(v3);
+            blockEntity.lineProgress = blockEntity.lineProgress == 0 ? div : div * (blockEntity.lineProgress / div);
+            double i = blockEntity.lineProgress;
 
-        Vec3 vLine = LanternUtil.getNewVecForStraightLine(v3, i);
-        spawnLineParticle(vLine, state, pos);
-        blockEntity.lineProgress = blockEntity.lineProgress + div;
+            Vec3 vLine = LanternUtil.getNewVecForStraightLine(v3, i);
+            spawnLineParticle(vLine, pos);
+            blockEntity.lineProgress = blockEntity.lineProgress + div;
 
-        if (i >= 1) {
-            blockEntity.drawing = false;
-            blockEntity.lineProgress = 0;
-            performBonemealOnTargetBlock(level, randomSource, blockEntity);
-        } else {
-            level.scheduleTick(pos, state.getBlock(), 1);
+            if (i >= 1) {
+                blockEntity.setDrawingBlockState(level, pos, state, blockEntity, Boolean.FALSE);
+                //blockEntity.drawing = false;
+                blockEntity.lineProgress = 0;
+                performBonemealOnTargetBlock(level, randomSource, blockEntity);
+            } else {
+                level.scheduleTick(pos, state.getBlock(), 1);
+            }
         }
     }
 
@@ -196,7 +230,7 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    public static void spawnLineParticle(Vec3 vec3, BlockState state, BlockPos pos) {
+    public static void spawnLineParticle(Vec3 vec3, BlockPos pos) {
         double x = pos.getX() + vec3.x + 0.5;
         double y = pos.getY() + vec3.y + 0.5;
         double z = pos.getZ() + vec3.z + 0.5;
@@ -216,5 +250,19 @@ public class LifesprenLanternBlockEntity extends BlockEntity implements MenuProv
                 Minecraft.getInstance().particleEngine.createParticle(ModParticles.GREEN_LINE_PARTICLE.get(), pX, pY, pZ, 0, 0, 0);
             }
         }
+    }
+
+    private boolean isDrawing(BlockState state) {
+        return state.getValue(LifesprenLantern.DRAWING);
+    }
+
+    private void setDrawingBlockState(Level level, BlockPos pos, BlockState state, LifesprenLanternBlockEntity blockEntity, boolean value) {
+        BlockPos tp = blockEntity.targetPos;
+
+        state = state.setValue(LifesprenLantern.DRAWING, value);
+        level.setBlock(pos, state, 3);
+
+        //level.setBlock resets targetPos data to null, so reassign here
+        blockEntity.targetPos = tp;
     }
 }

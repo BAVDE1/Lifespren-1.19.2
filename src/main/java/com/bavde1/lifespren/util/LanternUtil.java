@@ -63,9 +63,21 @@ public class LanternUtil {
         return new Vec3(i * v3.x, i * v3.y, i * v3.z);
     }
 
+    /**
+     * Returns whether block can be <strong>currently</strong> bonemeald
+     */
     public static boolean isValidBonemealableBlock(Level level, BlockPos blockPos, Block block, BlockState blockState, boolean isClient) {
         return block instanceof BonemealableBlock
-                && ((BonemealableBlock) block).isValidBonemealTarget(level, blockPos, blockState, isClient) &&
-                blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
+                && ((BonemealableBlock) block).isValidBonemealTarget(level, blockPos, blockState, isClient)
+                && blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
+    }
+
+    /**
+     * Returns whether block <strong>could</strong> be bonemeald, regardless of current age<br>
+     * EXAMPLE: Say a crop is fully grown, it wouldn't currently count as bonemealable, but can be bonemeald at a younger age
+     */
+    public static boolean isValidGrowableBlock(Block block, BlockState blockState) {
+        return block instanceof BonemealableBlock
+                && blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
     }
 }
