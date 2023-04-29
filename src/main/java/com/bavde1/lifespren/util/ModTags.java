@@ -18,6 +18,9 @@ public class ModTags {
         public static final TagKey<Block> LIFESPREN_LANTERN_BONEMEALABLE_CROPS
                 = tag("lifespren_lantern_bonemealable_crops");
 
+        public static final TagKey<Block> LIFESPREN_LANTERN_TARGETABLE_SPECIAL_CROPS
+                = tag("lifespren_lantern_targetable_special_crops");
+
         //tag stuff
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(new ResourceLocation(LifesprenMod.MOD_ID, name));

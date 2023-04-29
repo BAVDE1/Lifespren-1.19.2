@@ -80,4 +80,58 @@ public class LanternUtil {
         return block instanceof BonemealableBlock
                 && blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_BONEMEALABLE_CROPS);
     }
+
+    /**
+     * Returns whether block can be targeted by special (can target crops of any age)
+     */
+    public static boolean isValidSpecialTargetableCrop(Block block, BlockState blockState) {
+        return block instanceof BonemealableBlock
+                && blockState.is(ModTags.Blocks.LIFESPREN_LANTERN_TARGETABLE_SPECIAL_CROPS);
+    }
+
+    /**
+     * Returns arrayList of nearby blocks that can <strong>currently</strong> be bonemeald
+     */
+    public static ArrayList<BlockPos> getNearbyBonemealableCrops(Level level, BlockPos pos, int hRange, int vRange) {
+        ArrayList<BlockPos> validBlockPos = new ArrayList<>();
+        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
+            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
+
+            //if block is CURRENTLY bonemeal-able, add to list
+            if (LanternUtil.isValidBonemealableBlock(level, currentBlockPos, currentBlock, level.getBlockState(currentBlockPos), level.isClientSide)) {
+                validBlockPos.add(currentBlockPos.immutable());
+            }
+        }
+        return validBlockPos;
+    }
+
+    /**
+     * Returns arrayList of nearby blocks that <strong>can</strong> be bonemeald at some stage of its age
+     */
+    public static ArrayList<BlockPos> getNearbyCrops(Level level, BlockPos pos, int hRange, int vRange) {
+        ArrayList<BlockPos> validBlockPos = new ArrayList<>();
+        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
+            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
+
+            if (LanternUtil.isValidGrowableBlock(currentBlock, level.getBlockState(currentBlockPos))) {
+                validBlockPos.add(currentBlockPos.immutable());
+            }
+        }
+        return validBlockPos;
+    }
+
+    /**
+     * Returns arrayList of nearby crops that can be targeted by <strong>crop special</strong>
+     */
+    public static ArrayList<BlockPos> getNearbyTargetableSpecialCrops(Level level, BlockPos pos, int hRange, int vRange) {
+        ArrayList<BlockPos> validBlockPos = new ArrayList<>();
+        for (BlockPos currentBlockPos : LanternUtil.getBlockPosInRange(pos, hRange, vRange)) {
+            Block currentBlock = LanternUtil.getBlockAtPos(level, currentBlockPos);
+
+            if (LanternUtil.isValidSpecialTargetableCrop(currentBlock, level.getBlockState(currentBlockPos))) {
+                validBlockPos.add(currentBlockPos.immutable());
+            }
+        }
+        return validBlockPos;
+    }
 }

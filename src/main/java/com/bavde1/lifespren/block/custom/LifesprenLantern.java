@@ -105,6 +105,18 @@ public class LifesprenLantern extends BaseEntityBlock implements SimpleWaterlogg
         return InteractionResult.SUCCESS;
     }
 
+    @Override
+    public void attack(BlockState state, Level level, BlockPos pos, Player player) {
+        super.attack(state, level, pos, player);
+
+        if (player.isCrouching() && !level.isClientSide) {
+            LifesprenLanternBlockEntity blockEntity = getBlockEntity(level, pos);
+            if (blockEntity != null) {
+                blockEntity.specialActivate(level, pos, blockEntity, state);
+            }
+        }
+    }
+
     /**
      * Must be called on server side
      */
